@@ -4,6 +4,8 @@ from OpenGL.GLUT import *
 import numpy as np
 import maze 
 
+FPS = 15
+
 MOUSE_MODE_ROTATION = 0
 MOUSE_MODE_TRANSLATION = 1
 
@@ -245,7 +247,7 @@ class Viewer:
         elif key == KEY_EXIT: # Exit
             self.close()
 
-        glutPostRedisplay()
+        # glutPostRedisplay()
 
     def special(self, key, x, y):
         print(f"special key event: key={key}, x={x}, y={y}")
@@ -256,7 +258,7 @@ class Viewer:
         elif key == KEY_FOV_INC and self.fovy < FOV_MAX: # Increase FoV by 5
             self.fovy += 5
             
-        glutPostRedisplay()
+        # glutPostRedisplay()
 
     
     def pixel2viewport(self, x, y):
@@ -271,7 +273,7 @@ class Viewer:
         elif button == 0: # Set rotation mode for left click
             self.mouse_mode = MOUSE_MODE_ROTATION
         self.mouse_pos = None # Flush mouse position on click 
-        glutPostRedisplay()
+        # glutPostRedisplay()
     
     
     def get_track_ball_rotation_matrix(self, sp, ep):
@@ -290,7 +292,7 @@ class Viewer:
         return rotation_matrix
 
     def motion(self, x, y):  
-        print(f"mouse move event: x={x}, y={y}")
+        # print(f"mouse move event: x={x}, y={y}")
         
         # Task 4
         current_pos = self.pixel2viewport(x, y) # Normalize current position between -1 to 1
@@ -310,14 +312,18 @@ class Viewer:
                 glPopMatrix()
         self.mouse_pos = current_pos
 
-        glutPostRedisplay()
+        # glutPostRedisplay()
 
-    
+    def timer(self, value):
+        print("update")
+        glutPostRedisplay()
+        glutTimerFunc(1000//FPS, self.timer, FPS)
+
     def reshape(self, w, h):
         self.window_size = (w, h) # Update window size variable, it will affect to projection and normalization
         print(f"window size: {w} x {h}")
         # glViewport(0, 0, w, h) 
-        glutPostRedisplay()
+        # glutPostRedisplay()
 
     def run(self):
         glutInit()
@@ -326,6 +332,7 @@ class Viewer:
         glutInitWindowPosition(0, 0)
         glutCreateWindow(b"CS471 Computer Graphics #2")
 
+        self.timer(FPS)
         glutDisplayFunc(self.display)
         glutKeyboardFunc(self.keyboard)
         glutSpecialFunc(self.special)
