@@ -111,7 +111,9 @@ def drawCube(size=[0.1, 0.1, 0.1], pos=(0, 0, 0)):
     vertices = (
         (x/2, y/2, -z/2), (x/2, -y/2, -z/2), (-x/2, -y/2, -z/2), (-x/2, y/2, -z/2), 
         (x/2, y/2, z/2), (x/2, -y/2, z/2), (-x/2, -y/2, z/2), (-x/2, y/2, z/2),
-    )   
+    )
+    vertices = np.array(vertices)
+    pos = np.array(pos)
     surfaces = (
         (BOTTOM_LEFT_FRONT, BOTTOM_LEFT_BACK, BOTTOM_RIGHT_BACK, BOTTOM_RIGHT_FRONT),
         (BOTTOM_LEFT_FRONT, BOTTOM_LEFT_BACK, TOP_LEFT_BACK, TOP_LEFT_FRONT),
@@ -128,17 +130,14 @@ def drawCube(size=[0.1, 0.1, 0.1], pos=(0, 0, 0)):
         (0, 1, 1),
         (1, 0, 1),
     )
-    glPushMatrix()
-    glTranslatef(*pos)
     glBegin(GL_QUADS)
     c = 0
     for surface in surfaces:
         glColor3f(*colors[c])
         for i in surface:
-            glVertex3f(*vertices[i])	
+            glVertex3f(*(vertices[i] + pos))	
         c += 1				
     glEnd()
-    glPopMatrix()
 
 class Viewer:
     def __init__(self):
