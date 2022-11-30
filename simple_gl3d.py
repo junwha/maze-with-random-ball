@@ -139,11 +139,11 @@ class Viewer:
         self.mode = 0 # 0: default, 1: rotation, 2: translation
         self.rx = 0
         self.ry = 0
-        self.fov = 0
+        self.fov = 60
         self.zoom = 1
         self.degx = 0.0
-        self.degy = 0.0
-        self.trans = np.array([.0, .0, .0, .0])
+        self.degy = -90.0
+        self.trans = np.array([-0.1, 0.4, 0.1, .0])
         self.w = 800
         self.h = 800
         self.maze = maze.getMaze(MAP_SIZE)
@@ -206,6 +206,7 @@ class Viewer:
         glMatrixMode(GL_MODELVIEW)
         glLoadIdentity()
 
+        self.cameraMatrix = rotationx(self.degx) @ rotationy(self.degy)
         pos = np.array([0, 0, 0, 0]) @ self.cameraMatrix + self.trans 
         at = np.array([0, 0, -d, 0]) @ self.cameraMatrix + self.trans
         up = (np.array([0, 1, 0, 0])) @ self.cameraMatrix
@@ -241,9 +242,9 @@ class Viewer:
             front = front / np.linalg.norm(front)
         front = np.append(front, [0])
         if key == MOVE_FRONT:
-            self.trans += front * VELOCITY
-        if key == MOVE_BACK:
             self.trans -= front * VELOCITY
+        if key == MOVE_BACK:
+            self.trans += front * VELOCITY
         if key == MOVE_RIGHT:
             self.trans -= left * VELOCITY
         if key == MOVE_LEFT:
@@ -282,7 +283,6 @@ class Viewer:
             self.degx = max(self.degx, -90)
             self.degx = min(self.degx, 90)
             print(self.degx, self.degy)
-            self.cameraMatrix = rotationx(self.degx) @ rotationy(self.degy)
             self.rx = x
             self.ry = y
         if self.mode == 2:
