@@ -1,6 +1,7 @@
 from OpenGL.GL import *
 from OpenGL.GLU import *
 from OpenGL.GLUT import *
+from OpenGL.GL.shaders import *
 import numpy as np
 import maze 
 
@@ -153,11 +154,11 @@ class Viewer:
         self.zoom = 1
         self.degx = 0.0
         self.degy = -90.0
-        self.trans = np.array([-0.5, 1, 0.1, .0])
+        self.trans = np.array([-0.5, 0.4, 0.1, .0])
         self.w = 800
         self.h = 800
         self.maze = maze.getMaze(MAP_SIZE)
-    def light(self):
+    def light(self, pos=[0, 0.4, 0.1, 0]):
         glEnable(GL_COLOR_MATERIAL)
         glEnable(GL_LIGHTING)
         glEnable(GL_DEPTH_TEST)
@@ -166,37 +167,11 @@ class Viewer:
         lightAmbient = [0.5, 0.5, 0.5, 1.0]
         lightDiffuse = [0.5, 0.5, 0.5, 1.0]
         lightSpecular = [0.5, 0.5, 0.5, 1.0]
-        lightPosition = [0, 0.4, 0.1, 0]    # vector: point at infinity
-        # glLightfv(GL_LIGHT0, GL_AMBIENT, lightAmbient)
+        glLightfv(GL_LIGHT0, GL_AMBIENT, lightAmbient)
         glLightfv(GL_LIGHT0, GL_DIFFUSE, lightDiffuse)
-        glLightfv(GL_LIGHT0, GL_SPECULAR, lightSpecular)
-        glLightfv(GL_LIGHT0, GL_POSITION, lightPosition)
+        # glLightfv(GL_LIGHT0, GL_SPECULAR, lightSpecular)
+        glLightfv(GL_LIGHT0, GL_POSITION, pos)
         glEnable(GL_LIGHT0)
-
-    def draw_axis(self):
-        lw = 2
-        glLineWidth(lw)
-        glColor3f(1, 0, 0)
-        
-        glBegin(GL_LINES)
-        glVertex3f(0, 0, 0)
-        glVertex3f(0.2, 0, 0)
-        glEnd()
-
-        glColor3f(0, 1, 0)
-        glRotatef(90, 0, 0, 1)
-        glBegin(GL_LINES)
-        glVertex3f(0, 0, 0)
-        glVertex3f(0.2, 0, 0)
-        glEnd()
-
-        glColor3f(0, 0, 1)
-        glRotatef(-90, 0, 1, 0)
-        glBegin(GL_LINES)
-        glVertex3f(0, 0, 0)
-        glVertex3f(0.2, 0, 0)
-        glEnd()
-
 
     def display(self):
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
@@ -233,6 +208,7 @@ class Viewer:
                 else:
                     drawCube(size=(0.1, 0.2, 0.1), pos=(0.1*i, 0.1, 0.1*j))
 
+        self.light(pos)
         glutSwapBuffers()
 
     def keyboard(self, key, x, y):
@@ -331,7 +307,7 @@ class Viewer:
         glutMotionFunc(self.motion)
         glutReshapeFunc(self.reshape)
 
-        self.light()
+        # self.light()
 
         glutMainLoop()
 
