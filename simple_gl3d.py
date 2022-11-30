@@ -28,6 +28,13 @@ Z_FAR = 100000
 ROTATION_FACTOR = 100 # Track ball speed
 MAP_SIZE =21
 
+MOVE_FRONT = b'w'
+MOVE_BACK = b's'
+MOVE_RIGHT = b'a'
+MOVE_LEFT = b'd'
+
+VELOCITY = 0.1
+
 BOTTOM_LEFT_FRONT = 0
 BOTTOM_LEFT_BACK = 1
 BOTTOM_RIGHT_BACK = 2
@@ -136,7 +143,7 @@ class Viewer:
         self.zoom = 1
         self.degx = 0.0
         self.degy = 0.0
-        self.trans = np.array([.0, .0, 2, .0])
+        self.trans = np.array([.0, .0, .0, .0])
         self.w = 800
         self.h = 800
         self.maze = maze.getMaze(MAP_SIZE)
@@ -214,10 +221,33 @@ class Viewer:
                     drawCube(size=(0.1, 0.5, 0.1), pos=(0.1*i, 0.25, 0.1*j))
                 else:
                     drawCube(size=(0.1, 0.2, 0.1), pos=(0.1*i, 0.1, 0.1*j))
-                    
+
         glutSwapBuffers()
 
     def keyboard(self, key, x, y):
+        d = 1
+        if self.fov > 0:
+            d = 1/np.tan(np.radians(self.fov / 2))
+        pos = np.array([0, 0, 0, 0]) @ self.cameraMatrix + self.trans 
+        at = np.array([0, 0, -d, 0]) @ self.cameraMatrix + self.trans
+        up = (np.array([0, 1, 0, 0])) @ self.cameraMatrix
+        left, _, front = getCameraVectors(*(pos[:3]), *(at[:3]), *(up[:3]))
+        left[1] = 0
+        if np.linalg.norm(left) != 0:
+            left = left / np.linalg.norm(left)
+        left = np.append(left, [0])
+        front[1] = 0
+        if np.linalg.norm(front) != 0:
+            front = front / np.linalg.norm(front)
+        front = np.append(front, [0])
+        if key == MOVE_FRONT:
+            self.trans += front * VELOCITY
+        if key == MOVE_BACK:
+            self.trans -= front * VELOCITY
+        if key == MOVE_RIGHT:
+            self.trans -= left * VELOCITY
+        if key == MOVE_LEFT:
+            self.trans += left * VELOCITY
         if key == b'\x1b':
             exit()
 
