@@ -100,8 +100,8 @@ def f(a, b):
 def drawCube(size=[0.1, 0.1, 0.1], pos=(0, 0, 0)):
     x, y, z = size
     vertices = (
-        (x/2, y/2, -z/2), (x/2, -y/2, -z/2), (-x/2, -y/2, -z/2), (-x/2, y/2, -z/2), 
-        (x/2, y/2, z/2), (x/2, -y/2, z/2), (-x/2, -y/2, z/2), (-x/2, y/2, z/2),
+        (x/2, -y/2, -z/2), (x/2, -y/2, z/2), (-x/2, -y/2, z/2), (-x/2, -y/2, -z/2), 
+        (x/2, y/2, -z/2), (x/2, y/2, z/2), (-x/2, y/2, z/2), (-x/2, y/2, -z/2),
     )
     surfaces = (
         (BOTTOM_LEFT_FRONT, BOTTOM_LEFT_BACK, BOTTOM_RIGHT_BACK, BOTTOM_RIGHT_FRONT),
@@ -110,6 +110,14 @@ def drawCube(size=[0.1, 0.1, 0.1], pos=(0, 0, 0)):
         (TOP_LEFT_FRONT, TOP_LEFT_BACK, TOP_RIGHT_BACK, TOP_RIGHT_FRONT),
         (BOTTOM_LEFT_BACK, BOTTOM_RIGHT_BACK, TOP_RIGHT_BACK, TOP_LEFT_BACK),
         (BOTTOM_RIGHT_BACK, BOTTOM_RIGHT_FRONT, TOP_RIGHT_FRONT, TOP_RIGHT_BACK)
+    )
+    normals = (
+        (0, -1, 0),
+        (1, 0, 0),
+        (0, 0, -1),
+        (0, 1, 0),
+        (0, 0, 1),
+        (-1, 0, 0)
     )
     colors = (
         (1, 0, 0),
@@ -121,8 +129,10 @@ def drawCube(size=[0.1, 0.1, 0.1], pos=(0, 0, 0)):
     )
     glBegin(GL_QUADS)
     c = 0
-    for surface in surfaces:
-        glColor3f(*colors[c])
+    for s, surface in enumerate(surfaces):
+        # glColor3f(*colors[c])
+        glColor3f(1, 1, 1)
+        glNormal3f(*(normals[s]))
         for i in surface:
             glVertex3f(*f(vertices[i], pos))	
         c += 1				
@@ -143,7 +153,7 @@ class Viewer:
         self.zoom = 1
         self.degx = 0.0
         self.degy = -90.0
-        self.trans = np.array([-0.1, 0.4, 0.1, .0])
+        self.trans = np.array([-0.5, 1, 0.1, .0])
         self.w = 800
         self.h = 800
         self.maze = maze.getMaze(MAP_SIZE)
@@ -156,8 +166,8 @@ class Viewer:
         lightAmbient = [0.5, 0.5, 0.5, 1.0]
         lightDiffuse = [0.5, 0.5, 0.5, 1.0]
         lightSpecular = [0.5, 0.5, 0.5, 1.0]
-        lightPosition = [1, 1, -1, 0]    # vector: point at infinity
-        glLightfv(GL_LIGHT0, GL_AMBIENT, lightAmbient)
+        lightPosition = [0, 0.4, 0.1, 0]    # vector: point at infinity
+        # glLightfv(GL_LIGHT0, GL_AMBIENT, lightAmbient)
         glLightfv(GL_LIGHT0, GL_DIFFUSE, lightDiffuse)
         glLightfv(GL_LIGHT0, GL_SPECULAR, lightSpecular)
         glLightfv(GL_LIGHT0, GL_POSITION, lightPosition)
