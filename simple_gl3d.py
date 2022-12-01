@@ -158,7 +158,7 @@ class Viewer:
         self.w = 800
         self.h = 800
         self.maze = maze.getMaze(MAP_SIZE)
-    def light(self, pos=[0, 0.4, 0.1, 0]):
+    def light(self, pos=[0, 0.4, 0.0, 1.0]):
         glEnable(GL_COLOR_MATERIAL)
         glEnable(GL_LIGHTING)
         glEnable(GL_DEPTH_TEST)
@@ -169,7 +169,7 @@ class Viewer:
         lightSpecular = [0.5, 0.5, 0.5, 1.0]
         glLightfv(GL_LIGHT0, GL_AMBIENT, lightAmbient)
         glLightfv(GL_LIGHT0, GL_DIFFUSE, lightDiffuse)
-        # glLightfv(GL_LIGHT0, GL_SPECULAR, lightSpecular)
+        glLightfv(GL_LIGHT0, GL_SPECULAR, lightSpecular)
         glLightfv(GL_LIGHT0, GL_POSITION, pos)
         glEnable(GL_LIGHT0)
 
@@ -195,11 +195,8 @@ class Viewer:
         pos = np.array([0, 0, 0, 0]) @ self.cameraMatrix + self.trans 
         at = np.array([0, 0, -d, 0]) @ self.cameraMatrix + self.trans
         up = (np.array([0, 1, 0, 0])) @ self.cameraMatrix
-        M = getCameraView(*(pos[:3]),
-            *(at[:3]),
-            *(up[:3]),
-            self.trans)
-        glMultMatrixf(M)
+        self.light(pos=(pos[0], pos[1], pos[2], 1.0))
+        gluLookAt(*(pos[:3]), *(at[:3]), *(up[:3]))
 
         for i in range(MAP_SIZE):
             for j in range(MAP_SIZE):
@@ -207,8 +204,6 @@ class Viewer:
                     drawCube(size=(0.1, 0.5, 0.1), pos=(0.1*i, 0.25, 0.1*j))
                 else:
                     drawCube(size=(0.1, 0.2, 0.1), pos=(0.1*i, 0.1, 0.1*j))
-
-        self.light(pos)
         glutSwapBuffers()
 
     def keyboard(self, key, x, y):
