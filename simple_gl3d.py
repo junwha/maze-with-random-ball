@@ -169,12 +169,12 @@ class Viewer:
         # feel free to adjust light colors
         lightAmbient = [0.0, 0.0, 0.0, 1.0]
         lightDiffuse = [1.0, 1.0, 1.0, 1.0]
-        # lightSpecular = [0, 1, 0, 1.0]
+        lightSpecular = [0, 1, 0, 1.0]
         
         glLightfv(GL_LIGHT0, GL_AMBIENT, lightAmbient)
         glLightfv(GL_LIGHT0, GL_DIFFUSE, lightDiffuse)
-        # glLightfv(GL_LIGHT0, GL_SPECULAR, lightSpecular)
-        
+        glLightfv(GL_LIGHT0, GL_SPECULAR, lightSpecular)
+        glLightfv(GL_LIGHT0, GL_LINEAR_ATTENUATION, 1)
         glLightfv(GL_LIGHT0, GL_POSITION, pos)
         glEnable(GL_LIGHT0)
 
@@ -197,14 +197,11 @@ class Viewer:
         glLoadIdentity()
 
         self.cameraMatrix = rotationx(self.degx) @ rotationy(self.degy)
-        pos = np.array([0, 0, d, 0]) @ self.cameraMatrix + self.trans 
-        at = np.array([0, 0, 0, 0]) @ self.cameraMatrix + self.trans
+        pos = np.array([0, 0, 0, 0]) @ self.cameraMatrix + self.trans 
+        at = np.array([0, 0, -d, 0]) @ self.cameraMatrix + self.trans
         up = (np.array([0, 1, 0, 0])) @ self.cameraMatrix
-        _, __, front = getCameraVectors(*pos[:3], *at[:3], *up[:3])
-        cp = pos[:3]-front
-        self.light(pos=(pos[0], pos[1], pos[2], 1.0))
+        self.light(pos=(0, 0, 0, 1.0)) # (pos[0], pos[1], pos[2]
         gluLookAt(*(pos[:3]), *(at[:3]), *(up[:3]))
-        drawCube(size=(0.1, 0.1, 0.1), pos=(cp[0], cp[1], cp[2]))
 
         glColor3f(1, 1, 1)
         # drawCube(size=(0.1, 0.1, 0.1), pos=(0.1, 0.1, 0.1))
