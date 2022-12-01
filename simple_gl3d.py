@@ -161,7 +161,7 @@ class Viewer:
         self.w = 800
         self.h = 800
         self.maze = maze.getMaze(MAP_SIZE)
-    def light(self, pos=[0, 50, 0, 100.0]):
+    def light(self, pos=[0, 50, 100.0, 1]):
         glEnable(GL_COLOR_MATERIAL)
         glEnable(GL_LIGHTING)
         glEnable(GL_DEPTH_TEST)
@@ -200,8 +200,11 @@ class Viewer:
         pos = np.array([0, 0, d, 0]) @ self.cameraMatrix + self.trans 
         at = np.array([0, 0, 0, 0]) @ self.cameraMatrix + self.trans
         up = (np.array([0, 1, 0, 0])) @ self.cameraMatrix
+        _, __, front = getCameraVectors(*pos[:3], *at[:3], *up[:3])
+        cp = pos[:3]-front
         self.light(pos=(pos[0], pos[1], pos[2], 1.0))
         gluLookAt(*(pos[:3]), *(at[:3]), *(up[:3]))
+        drawCube(size=(0.1, 0.1, 0.1), pos=(cp[0], cp[1], cp[2]))
 
         glColor3f(1, 1, 1)
         # drawCube(size=(0.1, 0.1, 0.1), pos=(0.1, 0.1, 0.1))
