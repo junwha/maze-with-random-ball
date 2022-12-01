@@ -101,25 +101,28 @@ def f(a, b):
 def drawCube(size=[0.1, 0.1, 0.1], pos=(0, 0, 0)):
     x, y, z = size
     vertices = (
-        (x/2, -y/2, -z/2), (x/2, -y/2, z/2), (-x/2, -y/2, z/2), (-x/2, -y/2, -z/2), 
-        (x/2, y/2, -z/2), (x/2, y/2, z/2), (-x/2, y/2, z/2), (-x/2, y/2, -z/2),
+        (-x/2, -y/2, z/2), (-x/2, -y/2, -z/2), (x/2, -y/2, -z/2), (x/2, -y/2, z/2), 
+        (-x/2, y/2, z/2), (-x/2, y/2, -z/2), (x/2, y/2, -z/2), (x/2, y/2, z/2),
     )
+    
     surfaces = (
-        (BOTTOM_LEFT_FRONT, BOTTOM_LEFT_BACK, BOTTOM_RIGHT_BACK, BOTTOM_RIGHT_FRONT),
-        (BOTTOM_LEFT_FRONT, BOTTOM_LEFT_BACK, TOP_LEFT_BACK, TOP_LEFT_FRONT),
-        (BOTTOM_LEFT_FRONT, BOTTOM_RIGHT_FRONT, TOP_RIGHT_FRONT, TOP_LEFT_FRONT),
-        (TOP_LEFT_FRONT, TOP_LEFT_BACK, TOP_RIGHT_BACK, TOP_RIGHT_FRONT),
-        (BOTTOM_LEFT_BACK, BOTTOM_RIGHT_BACK, TOP_RIGHT_BACK, TOP_LEFT_BACK),
-        (BOTTOM_RIGHT_BACK, BOTTOM_RIGHT_FRONT, TOP_RIGHT_FRONT, TOP_RIGHT_BACK)
+        (TOP_RIGHT_FRONT, BOTTOM_RIGHT_FRONT, BOTTOM_RIGHT_BACK, TOP_RIGHT_BACK),
+        (TOP_LEFT_FRONT, TOP_RIGHT_FRONT, TOP_RIGHT_BACK, TOP_LEFT_BACK),
+        (TOP_LEFT_FRONT, BOTTOM_LEFT_FRONT, BOTTOM_RIGHT_FRONT, TOP_RIGHT_FRONT),
+        (TOP_LEFT_FRONT, TOP_LEFT_BACK, BOTTOM_LEFT_BACK, BOTTOM_LEFT_FRONT),
+        (BOTTOM_LEFT_FRONT, BOTTOM_RIGHT_FRONT, BOTTOM_RIGHT_BACK, BOTTOM_LEFT_BACK),
+        (TOP_RIGHT_BACK, TOP_LEFT_BACK, BOTTOM_LEFT_BACK, BOTTOM_RIGHT_BACK)
     )
+    
     normals = (
-        (0, -1, 0),
         (1, 0, 0),
-        (0, 0, -1),
         (0, 1, 0),
         (0, 0, 1),
-        (-1, 0, 0)
+        (-1, 0, 0),
+        (0, -1, 0),
+        (0, 0, -1)
     )
+    
     colors = (
         (1, 0, 0),
         (0, 1, 0),
@@ -132,7 +135,7 @@ def drawCube(size=[0.1, 0.1, 0.1], pos=(0, 0, 0)):
     c = 0
     for s, surface in enumerate(surfaces):
         # glColor3f(*colors[c])
-        glColor3f(1, 1, 1)
+        # glColor3f(1, 1, 1)
         glNormal3f(*(normals[s]))
         for i in surface:
             glVertex3f(*f(vertices[i], pos))	
@@ -158,18 +161,20 @@ class Viewer:
         self.w = 800
         self.h = 800
         self.maze = maze.getMaze(MAP_SIZE)
-    def light(self, pos=[0, 0.4, 0.1, 0]):
+    def light(self, pos=[0, 50, 100.0, 1]):
         glEnable(GL_COLOR_MATERIAL)
         glEnable(GL_LIGHTING)
         glEnable(GL_DEPTH_TEST)
 
         # feel free to adjust light colors
-        lightAmbient = [0.5, 0.5, 0.5, 1.0]
-        lightDiffuse = [0.5, 0.5, 0.5, 1.0]
-        lightSpecular = [0.5, 0.5, 0.5, 1.0]
+        lightAmbient = [0.0, 0.0, 0.0, 1.0]
+        lightDiffuse = [1.0, 1.0, 1.0, 1.0]
+        lightSpecular = [0, 1, 0, 1.0]
+        
         glLightfv(GL_LIGHT0, GL_AMBIENT, lightAmbient)
         glLightfv(GL_LIGHT0, GL_DIFFUSE, lightDiffuse)
-        # glLightfv(GL_LIGHT0, GL_SPECULAR, lightSpecular)
+        glLightfv(GL_LIGHT0, GL_SPECULAR, lightSpecular)
+        glLightfv(GL_LIGHT0, GL_LINEAR_ATTENUATION, 1)
         glLightfv(GL_LIGHT0, GL_POSITION, pos)
         glEnable(GL_LIGHT0)
 
@@ -195,20 +200,19 @@ class Viewer:
         pos = np.array([0, 0, 0, 0]) @ self.cameraMatrix + self.trans 
         at = np.array([0, 0, -d, 0]) @ self.cameraMatrix + self.trans
         up = (np.array([0, 1, 0, 0])) @ self.cameraMatrix
-        M = getCameraView(*(pos[:3]),
-            *(at[:3]),
-            *(up[:3]),
-            self.trans)
-        glMultMatrixf(M)
+        self.light(pos=(0, 0, 0, 1.0)) # (pos[0], pos[1], pos[2]
+        gluLookAt(*(pos[:3]), *(at[:3]), *(up[:3]))
 
+        glColor3f(1, 1, 1)
+        # drawCube(size=(0.1, 0.1, 0.1), pos=(0.1, 0.1, 0.1))
+        # glColor3f(0, 0, 1)
+        # drawCube(size=(0.1, 0.1, 0.1), pos=(0.3, 0.1, 0.1))
         for i in range(MAP_SIZE):
             for j in range(MAP_SIZE):
                 if self.maze[i][j] == 1:
                     drawCube(size=(0.1, 0.5, 0.1), pos=(0.1*i, 0.25, 0.1*j))
                 else:
                     drawCube(size=(0.1, 0.2, 0.1), pos=(0.1*i, 0.1, 0.1*j))
-
-        self.light(pos)
         glutSwapBuffers()
 
     def keyboard(self, key, x, y):
