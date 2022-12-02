@@ -45,6 +45,12 @@ TOP_LEFT_BACK = 5
 TOP_RIGHT_BACK = 6
 TOP_RIGHT_FRONT = 7
 
+
+UNIT_LENGTH = 1
+WALL_HEIGHT = 5
+ROAD_HEIGHT = 1
+
+
 def abs(x):
     if x < 0:
         return -x
@@ -210,9 +216,9 @@ class Viewer:
         for i in range(MAP_SIZE):
             for j in range(MAP_SIZE):
                 if self.maze[i][j] == 1:
-                    drawCube(size=(0.1, 0.5, 0.1), pos=(0.1*i, 0.25, 0.1*j))
+                    drawCube(size=(UNIT_LENGTH, UNIT_LENGTH*WALL_HEIGHT, UNIT_LENGTH), pos=(UNIT_LENGTH*i, UNIT_LENGTH*WALL_HEIGHT/2, UNIT_LENGTH*j))
                 else:
-                    drawCube(size=(0.1, 0.2, 0.1), pos=(0.1*i, 0.1, 0.1*j))
+                    drawCube(size=(UNIT_LENGTH, UNIT_LENGTH*ROAD_HEIGHT, UNIT_LENGTH), pos=(UNIT_LENGTH*i, UNIT_LENGTH*ROAD_HEIGHT/2, UNIT_LENGTH*j))
         glutSwapBuffers()
 
     def keyboard(self, key, x, y):
