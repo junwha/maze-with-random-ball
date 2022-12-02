@@ -101,7 +101,6 @@ class CollisionDetector():
         # TODO: 
         self.balls.append(b)
         
-    
     def testCollisionOnTwoBalls(self, b1: Ball, b2: Ball):
         min_dist = b1.radius + b2.radius
         cur_dist = np.linalg.norm(b1.pos-b2.pos)
@@ -224,8 +223,8 @@ class Viewer:
         self.h = 800
         self.maze = maze.getMaze(MAP_SIZE)
         self.sample_ball = [
-            Ball(pos=gen_np_f32_array([-3*UNIT_LENGTH, 2*UNIT_LENGTH, -5*UNIT_LENGTH]), v=gen_np_f32_array([0, 0, 2])),
-            Ball(pos=gen_np_f32_array([-3*UNIT_LENGTH, 2*UNIT_LENGTH, 5*UNIT_LENGTH]), v=gen_np_f32_array([0, 0, -2]))
+            Ball(pos=gen_np_f32_array([-3*UNIT_LENGTH, 1.5*UNIT_LENGTH, -2*UNIT_LENGTH]), v=gen_np_f32_array([0, 0, 6])),
+            Ball(pos=gen_np_f32_array([-3*UNIT_LENGTH, 1*UNIT_LENGTH, 2*UNIT_LENGTH]), v=gen_np_f32_array([0, 0, -6]))
         ]
     def light(self, pos=[0, 50, 100.0, 1]):
         glEnable(GL_COLOR_MATERIAL)
@@ -240,7 +239,7 @@ class Viewer:
         glLightfv(GL_LIGHT0, GL_AMBIENT, lightAmbient)
         glLightfv(GL_LIGHT0, GL_DIFFUSE, lightDiffuse)
         glLightfv(GL_LIGHT0, GL_SPECULAR, lightSpecular)
-        glLightfv(GL_LIGHT0, GL_LINEAR_ATTENUATION, 1)
+        glLightfv(GL_LIGHT0, GL_LINEAR_ATTENUATION, 0.1)
         glLightfv(GL_LIGHT0, GL_POSITION, pos)
         glEnable(GL_LIGHT0)
 
