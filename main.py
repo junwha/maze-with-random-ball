@@ -5,7 +5,7 @@ from OpenGL.GL.shaders import *
 import numpy as np
 import maze 
 
-FPS = 15
+FPS = 144
 
 MOUSE_MODE_ROTATION = 0
 MOUSE_MODE_TRANSLATION = 1
@@ -45,82 +45,19 @@ TOP_RIGHT_BACK = 6
 TOP_RIGHT_FRONT = 7
 
 
-UNIT_LENGTH = 10
-WALL_HEIGHT = 2*UNIT_LENGTH
+UNIT_LENGTH = 1
+WALL_HEIGHT = 5*UNIT_LENGTH
 ROAD_HEIGHT = 1
-VELOCITY = UNIT_LENGTH*0.1
+VELOCITY = UNIT_LENGTH*0.5
 
-TICK = 1/FPS
+TICK = 0.05 # 1/FPS
 
 RESULT_TICK_A = True
 RESULT_TICK_B = False
 
-
 def gen_np_f32_array(array):
     return np.array(array, dtype="float32")
-class RigidBody():
-    def __init__(self, pos, v, result_status=RESULT_TICK_A):
-        self.pos = pos
-        self.v = v
-        self.result_status = result_status
-    
-    # Result Status represents whether current result of Object is belongs to A or B.
-    def get_result_status(self):
-        return self.result_status
-    
-    def update(self):
-        self.pos += self.v*TICK 
 
-    def apply_collision_result(self, v):
-        self.v = v
-        self.result_status = RESULT_TICK_B  if RESULT_TICK_A else RESULT_TICK_A
-    
-    def draw(self):
-        pass 
-    
-class Ball(RigidBody):
-    def __init__(self, radius=UNIT_LENGTH*0.5, pos=gen_np_f32_array([0, 0, 0]), v=gen_np_f32_array([0, 0, 0.5])): 
-        self.radius = radius
-        super().__init__(pos, v)
-        
-    def draw(self):
-        glColor3f(0, 1, 1)
-        glPushMatrix()
-        glTranslatef(*self.pos)
-        glutSolidSphere(self.radius, 100, 100)
-        glPopMatrix()
-        glColor3f(1, 1, 1)
-
-class CollisionDetector():
-    def __init__(self):
-        self.balls = []
-        self.boundaries = []
-        # TODO: matrix needed
-        
-    def addBall(self, b):
-        # TODO: 
-        self.balls.append(b)
-        
-    def testCollisionOnTwoBalls(self, b1: Ball, b2: Ball):
-        min_dist = b1.radius + b2.radius
-        cur_dist = np.linalg.norm(b1.pos-b2.pos)
-        
-        if min_dist >= cur_dist:
-            self.triggerOnTwoBalls(b1, b2)
-    
-    def triggerOnOneBall(self, n, b):
-        pass
-    
-    def triggerOnTwoBalls(self, b1: Ball, b2: Ball):
-        normal = b2.pos-b1.pos 
-        unitNormal = normal/np.linalg.norm(normal) # unit normal vector from b1 to b2
-        
-        normalB1 = (b1.v @ unitNormal)*unitNormal
-        normalB2 = (b2.v @ unitNormal)*unitNormal
-        
-        b1.v = b1.v - normalB1 + normalB2
-        b2.v = b2.v - normalB2 + normalB1
-        
 
 def abs(x):
     if x < 0:
@@ -202,6 +139,108 @@ def drawCube(size=[0.1, 0.1, 0.1], pos=(0, 0, 0)):
             glVertex3f(*f(vertices[i], pos))	
         c += 1				
     glEnd()
+class RigidBody():
+    def __init__(self, pos, v, result_status=RESULT_TICK_A):
+        self.pos = pos
+        self.v = v
+        self.result_status = result_status
+    
+    # Result Status represents whether current result of Object is belongs to A or B.
+    def get_result_status(self):
+        return self.result_status
+    
+    def update(self):
+        self.pos += self.v*TICK 
+
+    # def apply_collision_result(self, v):
+    #     self.v = v
+    #     self.result_status = RESULT_TICK_B if RESULT_TICK_A else RESULT_TICK_A
+    
+    def draw(self):
+        pass 
+    
+class Ball(RigidBody):
+    def __init__(self, radius=UNIT_LENGTH*0.5, pos=gen_np_f32_array([0, 0, 0]), v=gen_np_f32_array([0, 0, 0.5])): 
+        self.radius = radius
+        super().__init__(pos, v)
+        
+    def draw(self):
+        glColor3f(0, 1, 1)
+        glPushMatrix()
+        glTranslatef(*self.pos)
+        glutSolidSphere(self.radius, 100, 100)
+        glPopMatrix()
+        glColor3f(1, 1, 1)
+
+class ConstraintBox():
+    def __init__(self, cLines=gen_np_f32_array([[-UNIT_LENGTH, UNIT_LENGTH], [-UNIT_LENGTH, UNIT_LENGTH], [-UNIT_LENGTH, UNIT_LENGTH]])): # Initialize constraint lines
+        assert cLines[0][0] < cLines[0][1] and cLines[1][0] < cLines[1][1] and cLines[2][0] < cLines[2][1]
+        self.cLines = cLines
+        
+    def testBall(self, b: Ball): # return (normal vector, error) on collision, otherwise 0 vector
+        eye = np.eye(3)
+        for i in range(3):
+            if (b.pos[i]-b.radius) <= self.cLines[i][0]:
+                return (eye[i], (b.radius-(b.pos[i]-self.cLines[i][0])))
+            elif (b.pos[i]+b.radius) >= self.cLines[i][1]:
+                return (-eye[i], (b.radius-(self.cLines[i][1]-b.pos[i])))
+        zero = gen_np_f32_array([0, 0, 0])
+        return (zero, zero) 
+class CollisionDetector():
+    def __init__(self):
+        self.balls = []
+        self.boundaries = []
+        self.constraintBox = ConstraintBox(cLines=gen_np_f32_array([[-3*UNIT_LENGTH, UNIT_LENGTH], [-3*UNIT_LENGTH, 3*UNIT_LENGTH], [-3*UNIT_LENGTH, 3*UNIT_LENGTH]]))
+        # TODO: matrix needed
+    
+    def testAll(self):
+        for i in range(len(self.balls)):
+            self.testCollisionOnOneBall(self.balls[i])
+            for j in range(len(self.balls)):
+                if i < j:
+                    self.testCollisionOnTwoBalls(self.balls[i], self.balls[j])
+                    
+    def addBall(self, b):
+        # TODO: 
+        self.balls.append(b)
+
+    def testCollisionOnOneBall(self, b):
+        normalFromWall, err = self.constraintBox.testBall(b)
+        
+        if np.linalg.norm(normalFromWall) == 0:
+            return
+        
+        self.triggerOnOneBall(normalFromWall, err, b)
+        
+    def testCollisionOnTwoBalls(self, b1: Ball, b2: Ball):
+        min_dist = b1.radius + b2.radius
+        cur_dist = np.linalg.norm(b1.pos-b2.pos)
+        
+        if min_dist >= cur_dist:
+            err = min_dist-cur_dist
+            self.triggerOnTwoBalls(err, b1, b2)
+        
+        
+    def triggerOnOneBall(self, n, err, b):
+        
+        assert np.linalg.norm(n) == 1
+
+        b.pos = b.pos + n*err # Error correction
+        b.v = b.v - (2 * (b.v@n))*n 
+        
+    def triggerOnTwoBalls(self, err, b1: Ball, b2: Ball):
+        normal = b2.pos-b1.pos 
+        unitNormal = normal/np.linalg.norm(normal) # unit normal vector from b1 to b2
+        
+        normalB1 = (b1.v @ unitNormal) * unitNormal
+        normalB2 = (b2.v @ unitNormal) * unitNormal
+        
+        b1.pos = b1.pos - unitNormal*(err/2) # Error correction
+        b2.pos = b2.pos + unitNormal*(err/2)
+        
+        b1.v = b1.v - normalB1 + normalB2
+        b2.v = b2.v - normalB2 + normalB1
+        
 
 class Viewer:
     def __init__(self):
@@ -223,9 +262,14 @@ class Viewer:
         self.h = 800
         self.maze = maze.getMaze(MAP_SIZE)
         self.sample_ball = [
-            Ball(pos=gen_np_f32_array([-3*UNIT_LENGTH, 1.5*UNIT_LENGTH, -2*UNIT_LENGTH]), v=gen_np_f32_array([0, 0, 6])),
-            Ball(pos=gen_np_f32_array([-3*UNIT_LENGTH, 1*UNIT_LENGTH, 2*UNIT_LENGTH]), v=gen_np_f32_array([0, 0, -6]))
+            Ball(pos=gen_np_f32_array([-1*UNIT_LENGTH, 1.5*UNIT_LENGTH, -1*UNIT_LENGTH]), v=gen_np_f32_array([0, 1, 1])),
+            Ball(pos=gen_np_f32_array([-1*UNIT_LENGTH, 1*UNIT_LENGTH, 1*UNIT_LENGTH]), v=gen_np_f32_array([0, 0, 2])),
+            Ball(pos=gen_np_f32_array([-1*UNIT_LENGTH, 0, 0]), v=gen_np_f32_array([0, -3, 0]))
         ]
+        self.collisionDetector = CollisionDetector()
+        for ball in self.sample_ball:
+            self.collisionDetector.addBall(ball)
+        
     def light(self, pos=[0, 50, 100.0, 1]):
         glEnable(GL_COLOR_MATERIAL)
         glEnable(GL_LIGHTING)
@@ -278,11 +322,16 @@ class Viewer:
                 else:
                     drawCube(size=(UNIT_LENGTH, UNIT_LENGTH*ROAD_HEIGHT, UNIT_LENGTH), pos=(UNIT_LENGTH*i, UNIT_LENGTH*ROAD_HEIGHT/2, UNIT_LENGTH*j))
         
-        CollisionDetector().testCollisionOnTwoBalls(self.sample_ball[0], self.sample_ball[1])
+        self.collisionDetector.testAll()
+        
         self.sample_ball[0].update()
         self.sample_ball[1].update()
+        self.sample_ball[2].update()
+        
         self.sample_ball[0].draw()
         self.sample_ball[1].draw()
+        self.sample_ball[2].draw()
+        
         glutSwapBuffers()
 
     def keyboard(self, key, x, y):
