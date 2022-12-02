@@ -34,7 +34,6 @@ MOVE_BACK = b's'
 MOVE_RIGHT = b'a'
 MOVE_LEFT = b'd'
 
-VELOCITY = 0.1
 
 BOTTOM_LEFT_FRONT = 0
 BOTTOM_LEFT_BACK = 1
@@ -46,36 +45,59 @@ TOP_RIGHT_BACK = 6
 TOP_RIGHT_FRONT = 7
 
 
-UNIT_LENGTH = 1
+UNIT_LENGTH = 2
 WALL_HEIGHT = 5
 ROAD_HEIGHT = 1
+VELOCITY = UNIT_LENGTH*0.5
 
+TICK = 1/FPS
+
+RESULT_TICK_A = True
+RESULT_TICK_B = False
+
+
+def gen_np_f32_array(array):
+    return np.array(array, dtype="float32")
+class RigidBody():
+    def __init__(self, pos, v, result_status=RESULT_TICK_A):
+        self.pos = pos
+        self.v = v
+        self.result_status = result_status
+    
+    # Result Status represents whether current result of Object is belongs to A or B.
+    def get_result_status(self):
+        return self.result_status
+    
+    def update(self):
+        self.pos += self.v*TICK 
+
+    def apply_collision_result(self, v):
+        self.v = v
+        self.result_status = RESULT_TICK_B  if RESULT_TICK_A else RESULT_TICK_A
+    
+    def draw(self):
+        pass 
+    
+class Ball(RigidBody):
+    def __init__(self, radius=UNIT_LENGTH*0.5, pos=gen_np_f32_array([0, 0, 0]), v=gen_np_f32_array([0, 0, 0.5])): 
+        self.radius = radius
+        super().__init__(pos, v)
+        
+    def draw(self):
+        glPushMatrix()
+        glTranslatef(*self.pos)
+        glutSolidSphere(self.radius, 100, 100)
+        glPopMatrix()
 
 def abs(x):
     if x < 0:
         return -x
     return x
 
-def getCameraView(px, py, pz, ax, ay, az, ux, uy, uz, trans):
-    p = np.array([px, py, pz])
-    at = np.array([ax, ay, az])
-    up = np.array([ux, uy, uz])
-    z = p - at
-    z = z / np.linalg.norm(z)
-    x = np.cross(up, z)
-    x = x / np.linalg.norm(x)
-    y = np.cross(z, x)
-    R = np.array([[x[0], y[0], z[0], 0],
-                  [x[1], y[1], z[1], 0],
-                  [x[2], y[2], z[2], 0],
-                  [-np.dot(p, x), -np.dot(p, y), -np.dot(p, z), 1]
-    ])
-    return R
-
 def getCameraVectors(px, py, pz, ax, ay, az, ux, uy, uz):
-    p = np.array([px, py, pz])
-    at = np.array([ax, ay, az])
-    up = np.array([ux, uy, uz])
+    p = gen_np_f32_array([px, py, pz])
+    at = gen_np_f32_array([ax, ay, az])
+    up = gen_np_f32_array([ux, uy, uz])
     z = p - at
     z = z / np.linalg.norm(z)
     x = np.cross(up, z)
@@ -87,19 +109,19 @@ def rotationy(deg):
     deg *= np.pi / 180
     c = np.cos(deg)
     s = np.sin(deg)
-    return np.array([[c, 0, -s, 0],
+    return gen_np_f32_array([[c, 0, -s, 0],
                     [0, 1, 0, 0],
                     [s, 0, c, 0],
-                    [0, 0, 0, 1]], dtype=np.float32)
+                    [0, 0, 0, 1]])
 
 def rotationx(deg):
     deg *= np.pi / 180
     c = np.cos(deg)
     s = np.sin(deg)
-    return np.array([[1, 0, 0, 0],
+    return gen_np_f32_array([[1, 0, 0, 0],
                     [0, c, -s, 0],
                     [0, s, c, 0],
-                    [0, 0, 0, 1]], dtype=np.float32)
+                    [0, 0, 0, 1]])
 
 def f(a, b):
     return (a[0] + b[0], a[1] + b[1], a[2] + b[2])
@@ -150,7 +172,7 @@ def drawCube(size=[0.1, 0.1, 0.1], pos=(0, 0, 0)):
 
 class Viewer:
     def __init__(self):
-        self.cameraMatrix = np.array([
+        self.cameraMatrix = gen_np_f32_array([
             [1, 0, 0, 0],
             [0, 1, 0, 0],
             [0, 0, 1, 0],
@@ -163,10 +185,11 @@ class Viewer:
         self.zoom = 1
         self.degx = 0.0
         self.degy = -90.0
-        self.trans = np.array([-0.5, 0.4, 0.1, .0])
+        self.trans = gen_np_f32_array([-UNIT_LENGTH, UNIT_LENGTH*2, UNIT_LENGTH, .0])
         self.w = 800
         self.h = 800
         self.maze = maze.getMaze(MAP_SIZE)
+        self.sample_ball = Ball(pos=gen_np_f32_array([-3*UNIT_LENGTH, 2*UNIT_LENGTH, UNIT_LENGTH]))
     def light(self, pos=[0, 50, 100.0, 1]):
         glEnable(GL_COLOR_MATERIAL)
         glEnable(GL_LIGHTING)
@@ -195,17 +218,16 @@ class Viewer:
         glLoadIdentity()
 
         glScalef(self.zoom, self.zoom, 1)
-        if self.fov == 0:
-            glOrtho(-self.w/self.h, self.w/self.h, -1, 1, 0.0001, 10000)
-        else:
-            gluPerspective(self.fov, self.w/self.h, 0.0001, 10000)
+   
+        gluPerspective(self.fov, self.w/self.h, 0.0001, 10000)
+        
         glMatrixMode(GL_MODELVIEW)
         glLoadIdentity()
 
         self.cameraMatrix = rotationx(self.degx) @ rotationy(self.degy)
-        pos = np.array([0, 0, 0, 0]) @ self.cameraMatrix + self.trans 
-        at = np.array([0, 0, -d, 0]) @ self.cameraMatrix + self.trans
-        up = (np.array([0, 1, 0, 0])) @ self.cameraMatrix
+        pos = gen_np_f32_array([0, 0, 0, 0]) @ self.cameraMatrix + self.trans 
+        at = gen_np_f32_array([0, 0, -d, 0]) @ self.cameraMatrix + self.trans
+        up = (gen_np_f32_array([0, 1, 0, 0])) @ self.cameraMatrix
         self.light(pos=(0, 0, 0, 1.0)) # (pos[0], pos[1], pos[2]
         gluLookAt(*(pos[:3]), *(at[:3]), *(up[:3]))
 
@@ -219,15 +241,18 @@ class Viewer:
                     drawCube(size=(UNIT_LENGTH, UNIT_LENGTH*WALL_HEIGHT, UNIT_LENGTH), pos=(UNIT_LENGTH*i, UNIT_LENGTH*WALL_HEIGHT/2, UNIT_LENGTH*j))
                 else:
                     drawCube(size=(UNIT_LENGTH, UNIT_LENGTH*ROAD_HEIGHT, UNIT_LENGTH), pos=(UNIT_LENGTH*i, UNIT_LENGTH*ROAD_HEIGHT/2, UNIT_LENGTH*j))
+        
+        self.sample_ball.update()
+        self.sample_ball.draw()
         glutSwapBuffers()
 
     def keyboard(self, key, x, y):
         d = 1
         if self.fov > 0:
             d = 1/np.tan(np.radians(self.fov / 2))
-        pos = np.array([0, 0, 0, 0]) @ self.cameraMatrix + self.trans 
-        at = np.array([0, 0, -d, 0]) @ self.cameraMatrix + self.trans
-        up = (np.array([0, 1, 0, 0])) @ self.cameraMatrix
+        pos = gen_np_f32_array([0, 0, 0, 0]) @ self.cameraMatrix + self.trans 
+        at = gen_np_f32_array([0, 0, -d, 0]) @ self.cameraMatrix + self.trans
+        up = (gen_np_f32_array([0, 1, 0, 0])) @ self.cameraMatrix
         left, _, front = getCameraVectors(*(pos[:3]), *(at[:3]), *(up[:3]))
         left[1] = 0
         if np.linalg.norm(left) != 0:
@@ -282,9 +307,9 @@ class Viewer:
             self.rx = x
             self.ry = y
         if self.mode == 2:
-            pos = np.array([0, 0, 1, 0]) @ self.cameraMatrix + self.trans
-            at = np.array([0, 0, 0, 0]) + self.trans
-            up = np.array([0, 1, 0, 0]) @ self.cameraMatrix
+            pos = gen_np_f32_array([0, 0, 1, 0]) @ self.cameraMatrix + self.trans
+            at = gen_np_f32_array([0, 0, 0, 0]) + self.trans
+            up = gen_np_f32_array([0, 1, 0, 0]) @ self.cameraMatrix
             vx, vy, _ = getCameraVectors(*(pos[:3]), *(at[:3]), *(up[:3]))
             self.trans -= (x - self.rx) * np.append(vx, [0]) * 0.002
             self.trans += (y - self.ry) * np.append(vy, [0]) * 0.002
