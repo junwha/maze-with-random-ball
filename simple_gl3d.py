@@ -45,10 +45,10 @@ TOP_RIGHT_BACK = 6
 TOP_RIGHT_FRONT = 7
 
 
-UNIT_LENGTH = 2
-WALL_HEIGHT = 5
+UNIT_LENGTH = 10
+WALL_HEIGHT = 2*UNIT_LENGTH
 ROAD_HEIGHT = 1
-VELOCITY = UNIT_LENGTH*0.5
+VELOCITY = UNIT_LENGTH*0.1
 
 TICK = 1/FPS
 
@@ -84,10 +84,44 @@ class Ball(RigidBody):
         super().__init__(pos, v)
         
     def draw(self):
+        glColor3f(0, 1, 1)
         glPushMatrix()
         glTranslatef(*self.pos)
         glutSolidSphere(self.radius, 100, 100)
         glPopMatrix()
+        glColor3f(1, 1, 1)
+
+class CollisionDetector():
+    def __init__(self):
+        self.balls = []
+        self.boundaries = []
+        # TODO: matrix needed
+        
+    def addBall(self, b):
+        # TODO: 
+        self.balls.append(b)
+        
+    
+    def testCollisionOnTwoBalls(self, b1: Ball, b2: Ball):
+        min_dist = b1.radius + b2.radius
+        cur_dist = np.linalg.norm(b1.pos-b2.pos)
+        
+        if min_dist >= cur_dist:
+            self.triggerOnTwoBalls(b1, b2)
+    
+    def triggerOnOneBall(self, n, b):
+        pass
+    
+    def triggerOnTwoBalls(self, b1: Ball, b2: Ball):
+        normal = b2.pos-b1.pos 
+        unitNormal = normal/np.linalg.norm(normal) # unit normal vector from b1 to b2
+        
+        normalB1 = (b1.v @ unitNormal)*unitNormal
+        normalB2 = (b2.v @ unitNormal)*unitNormal
+        
+        b1.v = b1.v - normalB1 + normalB2
+        b2.v = b2.v - normalB2 + normalB1
+        
 
 def abs(x):
     if x < 0:
@@ -185,11 +219,14 @@ class Viewer:
         self.zoom = 1
         self.degx = 0.0
         self.degy = -90.0
-        self.trans = gen_np_f32_array([-UNIT_LENGTH, UNIT_LENGTH*2, UNIT_LENGTH, .0])
+        self.trans = gen_np_f32_array([-10*UNIT_LENGTH, UNIT_LENGTH*2, UNIT_LENGTH, .0])
         self.w = 800
         self.h = 800
         self.maze = maze.getMaze(MAP_SIZE)
-        self.sample_ball = Ball(pos=gen_np_f32_array([-3*UNIT_LENGTH, 2*UNIT_LENGTH, UNIT_LENGTH]))
+        self.sample_ball = [
+            Ball(pos=gen_np_f32_array([-3*UNIT_LENGTH, 2*UNIT_LENGTH, -5*UNIT_LENGTH]), v=gen_np_f32_array([0, 0, 2])),
+            Ball(pos=gen_np_f32_array([-3*UNIT_LENGTH, 2*UNIT_LENGTH, 5*UNIT_LENGTH]), v=gen_np_f32_array([0, 0, -2]))
+        ]
     def light(self, pos=[0, 50, 100.0, 1]):
         glEnable(GL_COLOR_MATERIAL)
         glEnable(GL_LIGHTING)
@@ -242,8 +279,11 @@ class Viewer:
                 else:
                     drawCube(size=(UNIT_LENGTH, UNIT_LENGTH*ROAD_HEIGHT, UNIT_LENGTH), pos=(UNIT_LENGTH*i, UNIT_LENGTH*ROAD_HEIGHT/2, UNIT_LENGTH*j))
         
-        self.sample_ball.update()
-        self.sample_ball.draw()
+        CollisionDetector().testCollisionOnTwoBalls(self.sample_ball[0], self.sample_ball[1])
+        self.sample_ball[0].update()
+        self.sample_ball[1].update()
+        self.sample_ball[0].draw()
+        self.sample_ball[1].draw()
         glutSwapBuffers()
 
     def keyboard(self, key, x, y):
@@ -303,7 +343,6 @@ class Viewer:
                 self.degx -= d
             self.degx = max(self.degx, -90)
             self.degx = min(self.degx, 90)
-            print(self.degx, self.degy)
             self.rx = x
             self.ry = y
         if self.mode == 2:
