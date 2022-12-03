@@ -18,17 +18,20 @@ class IDGenerator:
 class RigidBody():
     _idGenerator = IDGenerator() # Static variable
     
-    def __init__(self, pos, v, result_status=RESULT_TICK_A):
+    def __init__(self, pos, v):
         self.id = RigidBody._idGenerator.genNewID()
-        self.pos = pos
+        self._pos = pos
         self.v = v
-        self.result_status = result_status
         self.collisionTargets = set() # Collided objects to this rigid body
         self.collisionRange = [[False, False]]*3 # Collided constraint lines
         
-    # Result Status represents whether current result of Object is belongs to A or B.
-    def get_result_status(self):
-        return self.result_status
+    @property
+    def pos(self):
+        return self._pos
+    
+    @pos.setter
+    def pos(self, pos):
+        self._pos = pos
     
     def resetCollision(self):
         for i in range(3):
@@ -59,38 +62,39 @@ class RigidBody():
         pass 
     
 class Ball(RigidBody):
-    def __init__(self, radius=UNIT_LENGTH*0.5, pos=gen_np_f32_array([0, 0, 0]), v=gen_np_f32_array([0, 0, 0.5])): 
+    def __init__(self, radius=UNIT_LENGTH*0.5, pos=gen_np_f32_array([0, 0, 0]), v=gen_np_f32_array([0, 0, 0.5]), c=gen_np_f32_array([1, 1, 1])): 
         self.radius = radius
-        
+        self.c = c # Color
         super().__init__(pos, v)
         
     def draw(self):
-        glColor3f(0, 1, 1)
+        glColor3f(*self.c)
         glPushMatrix()
         glTranslatef(*self.pos)
         glutSolidSphere(self.radius, 100, 100)
         glPopMatrix()
         glColor3f(1, 1, 1)
 
-class ConstraintBox():
-    def __init__(self, cLines=gen_np_f32_array([[-UNIT_LENGTH, UNIT_LENGTH], [-UNIT_LENGTH, UNIT_LENGTH], [-UNIT_LENGTH, UNIT_LENGTH]])): # Initialize constraint lines
+# class ConstraintBox():
+#     def __init__(self, cLines=gen_np_f32_array([[-UNIT_LENGTH, UNIT_LENGTH], [-UNIT_LENGTH, UNIT_LENGTH], [-UNIT_LENGTH, UNIT_LENGTH]])): # Initialize constraint lines
+#         assert cLines[0][0] < cLines[0][1] and cLines[1][0] < cLines[1][1] and cLines[2][0] < cLines[2][1]
+#         self.cLines = cLines
+        
+#     def testBall(self, b: Ball): # return (normal vector, error, line) on collision, otherwise 0 vector
+#         for i in range(3):
+#             if (b.pos[i]-b.radius) <= self.cLines[i][0]:
+#                 return (EYE_MATRIX[i], (b.radius-(b.pos[i]-self.cLines[i][0])), (i, 0))
+#             elif (b.pos[i]+b.radius) >= self.cLines[i][1]:
+#                 return (-EYE_MATRIX[i], (b.radius-(self.cLines[i][1]-b.pos[i])), (i, 1))
+        
+#         return (ZERO_VECTOR, ZERO_VECTOR, None) 
+
+class CollisionDetector():
+    def __init__(self, cLines):
+        self.balls = {}
         assert cLines[0][0] < cLines[0][1] and cLines[1][0] < cLines[1][1] and cLines[2][0] < cLines[2][1]
         self.cLines = cLines
         
-    def testBall(self, b: Ball): # return (normal vector, error, line) on collision, otherwise 0 vector
-        for i in range(3):
-            if (b.pos[i]-b.radius) <= self.cLines[i][0]:
-                return (EYE_MATRIX[i], (b.radius-(b.pos[i]-self.cLines[i][0])), (i, 0))
-            elif (b.pos[i]+b.radius) >= self.cLines[i][1]:
-                return (-EYE_MATRIX[i], (b.radius-(self.cLines[i][1]-b.pos[i])), (i, 1))
-        
-        return (ZERO_VECTOR, ZERO_VECTOR, None) 
-    
-class CollisionDetector():
-    def __init__(self):
-        self.balls = {}
-        self.constraintBox = ConstraintBox(cLines=gen_np_f32_array([[-3*UNIT_LENGTH, UNIT_LENGTH], [-3*UNIT_LENGTH, 3*UNIT_LENGTH], [-3*UNIT_LENGTH, 3*UNIT_LENGTH]]))
-    
     def testAll(self):
         for key1 in self.balls.keys():
             self.testCollisionOnOneBall(self.balls[key1])
@@ -102,15 +106,15 @@ class CollisionDetector():
         self.balls[b.id] = b
 
     def testCollisionOnOneBall(self, b: Ball):
-        normalFromWall, err, line = self.constraintBox.testBall(b)
-        
-        if np.linalg.norm(normalFromWall) == 0:
-            return
-
-        if not b.tryCollideWithLine(*line): # Already triggered
-            return
-        
-        self.triggerOnOneBall(normalFromWall, err, b)
+        for i in range(3):
+            if abs(b.pos[i]-self.cLines[i][0]) <= b.radius:
+                if b.tryCollideWithLine(i, 0):
+                    normal, err = EYE_MATRIX[i], (b.radius-abs(self.cLines[i][0]-b.pos[i]))
+                    self.triggerOnOneBall(normal, err, b)
+            elif abs(b.pos[i]-self.cLines[i][1]) <= b.radius:
+                if b.tryCollideWithLine(i, 1):
+                    normal, err = -EYE_MATRIX[i], (b.radius-abs(b.pos[i]-self.cLines[i][1]))
+                    self.triggerOnOneBall(normal, err, b)
         
     def testCollisionOnTwoBalls(self, b1: Ball, b2: Ball):
         min_dist = b1.radius + b2.radius
@@ -123,12 +127,12 @@ class CollisionDetector():
             self.triggerOnTwoBalls(err, b1, b2)
         
     def triggerOnOneBall(self, n, err, b):
-        
         assert np.linalg.norm(n) == 1
 
         b.pos = b.pos + n*err # Error correction
+
         b.v = b.v - (2 * (b.v@n))*n 
-        
+
     def triggerOnTwoBalls(self, err, b1: Ball, b2: Ball):
         normal = b2.pos-b1.pos 
         unitNormal = normal/np.linalg.norm(normal) # unit normal vector from b1 to b2

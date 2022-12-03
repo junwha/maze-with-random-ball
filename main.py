@@ -23,19 +23,29 @@ class Viewer:
         self.zoom = 1
         self.degx = 0.0
         self.degy = -90.0
-        self.trans = gen_np_f32_array([-10*UNIT_LENGTH, UNIT_LENGTH*2, UNIT_LENGTH, .0])
+        self.trans = gen_np_f32_array([-10*UNIT_LENGTH, UNIT_LENGTH*10, UNIT_LENGTH, .0])
         self.w = 800
         self.h = 800
         self.maze = maze.getMaze(MAP_SIZE)
-        self.sample_ball = [
+        self.detectors = [[None]*MAP_SIZE]*MAP_SIZE
+        
+        self.sampleBalls = [
             Ball(pos=gen_np_f32_array([-1*UNIT_LENGTH, 1.5*UNIT_LENGTH, -1*UNIT_LENGTH]), v=gen_np_f32_array([0, 0.5, 0.5])),
             Ball(pos=gen_np_f32_array([-1*UNIT_LENGTH, 1*UNIT_LENGTH, 1*UNIT_LENGTH]), v=gen_np_f32_array([0, 0, 0.5])),
             Ball(pos=gen_np_f32_array([-1*UNIT_LENGTH, 0, 0]), v=gen_np_f32_array([0, -1, 0]))
         ]
-        self.collisionDetector = CollisionDetector()
-        for ball in self.sample_ball:
+        
+        self.collisionDetector = CollisionDetector(gen_np_f32_array([[-3*UNIT_LENGTH, UNIT_LENGTH], [-3*UNIT_LENGTH, 3*UNIT_LENGTH], [-3*UNIT_LENGTH, 3*UNIT_LENGTH]]))
+        for ball in self.sampleBalls:
             self.collisionDetector.addBall(ball)
-            print(ball.id)
+        
+        self.balls = []
+        
+        for i in range(MAP_SIZE):
+            for j in range(MAP_SIZE):                
+                if self.maze[i][j] == ROAD:
+                    self.balls.append(Ball(radius=0.1*UNIT_LENGTH, pos=gen_np_f32_array([i*UNIT_LENGTH, ROAD_HEIGHT*UNIT_LENGTH + UNIT_LENGTH, j*UNIT_LENGTH]), v=np.random.rand(3), c=np.random.rand(3)))             
+                    
         
     def light(self, pos=[0, 50, 100.0, 1]):
         glEnable(GL_COLOR_MATERIAL)
@@ -54,6 +64,30 @@ class Viewer:
         glLightfv(GL_LIGHT0, GL_POSITION, pos)
         glEnable(GL_LIGHT0)
 
+    def constructCLines(self, i, j, unit):
+        cLines = gen_np_f32_array([[-np.inf, np.inf]]*3)
+    
+        if i-1 < 0 or (i-1 >= 0 and self.maze[i-1][j] == WALL):
+            cLines[0][0] = unit*(i-1)+0.5*unit
+
+        if i+1 >= MAP_SIZE or (i+1 < MAP_SIZE and self.maze[i+1][j] == WALL):
+            cLines[0][1] = unit*(i+1)-0.5*unit
+            
+        if j-1 < 0 or (j-1 >= 0 and self.maze[i][j-1] == WALL):
+            cLines[2][0] = unit*(j-1)+0.5*unit
+            
+        if j+1 >= MAP_SIZE or (j+1 < MAP_SIZE and self.maze[i][j+1] == WALL):
+            cLines[2][1] = unit*(j+1)-0.5*unit
+        
+        # cLines[0][0] = unit*(i-1)+0.5*unit
+        # cLines[0][1] = unit*(i+1)-0.5*unit
+        # cLines[2][0] = unit*(j-1)+0.5*unit
+        # cLines[2][1] = unit*(j+1)-0.5*unit
+        
+        cLines[1][0] = UNIT_LENGTH*ROAD_HEIGHT
+        cLines[1][1] = UNIT_LENGTH*WALL_HEIGHT*2
+        return cLines
+    
     def display(self):
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
         glClearColor(0, 0, 0, 1)
@@ -79,27 +113,52 @@ class Viewer:
         gluLookAt(*(pos[:3]), *(at[:3]), *(up[:3]))
 
         glColor3f(1, 1, 1)
-        # drawCube(size=(0.1, 0.1, 0.1), pos=(0.1, 0.1, 0.1))
+        # drawCube(size=(0.1, 0.1, 0.1),axi pos=(0.1, 0.1, 0.1))
         # glColor3f(0, 0, 1)
         # drawCube(size=(0.1, 0.1, 0.1), pos=(0.3, 0.1, 0.1))
-        for i in range(MAP_SIZE):
-            for j in range(MAP_SIZE):
-                if self.maze[i][j] == 1:
-                    drawCube(size=(UNIT_LENGTH, UNIT_LENGTH*WALL_HEIGHT, UNIT_LENGTH), pos=(UNIT_LENGTH*i, UNIT_LENGTH*WALL_HEIGHT/2, UNIT_LENGTH*j))
-                else:
-                    drawCube(size=(UNIT_LENGTH, UNIT_LENGTH*ROAD_HEIGHT, UNIT_LENGTH), pos=(UNIT_LENGTH*i, UNIT_LENGTH*ROAD_HEIGHT/2, UNIT_LENGTH*j))
         
-        self.sample_ball[0].update()
-        self.sample_ball[1].update()
-        self.sample_ball[2].update()
+        self.sampleBalls[0].update()
+        self.sampleBalls[1].update()
+        self.sampleBalls[2].update()
+        
+        for i in range(MAP_SIZE):
+            for j in range(MAP_SIZE):                
+                if self.maze[i][j] == WALL: # Wall
+                    drawCube(size=(UNIT_LENGTH, UNIT_LENGTH*WALL_HEIGHT, UNIT_LENGTH), pos=(UNIT_LENGTH*i, UNIT_LENGTH*WALL_HEIGHT/2, UNIT_LENGTH*j))
+                else: # Road
+                    drawCube(size=(UNIT_LENGTH, UNIT_LENGTH*ROAD_HEIGHT, UNIT_LENGTH), pos=(UNIT_LENGTH*i, UNIT_LENGTH*ROAD_HEIGHT/2, UNIT_LENGTH*j))
+                    self.detectors[i][j] = CollisionDetector(self.constructCLines(i, j, UNIT_LENGTH))
+        
+        for ball in self.balls:
+            ball.update()
+            try:
+                i, j = round(ball.pos[0]/UNIT_LENGTH), round(ball.pos[2]/UNIT_LENGTH) # int((ball.pos[0]+0.5*UNIT_LENGTH)//UNIT_LENGTH), int((ball.pos[2]+0.5*UNIT_LENGTH)//UNIT_LENGTH)
+            except:
+                # print(ball.pos)
+                pass
+                
+            if i < 0 or j < 0 or i >= MAP_SIZE or j >= MAP_SIZE or self.detectors[i][j] == None:
+                # print(ball.pos)
+                # print(i, j)
+                pass
+            else:
+                self.detectors[i][j].addBall(ball)
+        
+        for i in range(MAP_SIZE):
+            for j in range(MAP_SIZE):  
+                if self.maze[i][j] == ROAD:
+                    self.detectors[i][j].testAll()
+                
+        for ball in self.balls:
+            ball.draw()    
         
         self.collisionDetector.testAll()
         
        
         
-        self.sample_ball[0].draw()
-        self.sample_ball[1].draw()
-        self.sample_ball[2].draw()
+        self.sampleBalls[0].draw()
+        self.sampleBalls[1].draw()
+        self.sampleBalls[2].draw()
         
         glutSwapBuffers()
 
