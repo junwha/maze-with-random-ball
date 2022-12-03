@@ -4,59 +4,9 @@ from OpenGL.GLUT import *
 from OpenGL.GL.shaders import *
 import numpy as np
 import maze 
-
-FPS = 15
-
-MOUSE_MODE_ROTATION = 0
-MOUSE_MODE_TRANSLATION = 1
-
-KEY_ZOOM_IN = b"+"
-KEY_ZOOM_OUT = b"-"
-KEY_FOV_INC = 101
-KEY_FOV_DEC = 103
-KEY_RESET = b"d"
-KEY_RESET_PROJECTION = b"0"
-KEY_EXIT = b"\x1b"
-
-SCALE_MIN = 0.1
-SCALE_MAX = 5
-
-FOV_MIN = 0
-FOV_MAX = 90
-
-Z_NEAR = 0.01
-Z_FAR = 100000
-ROTATION_FACTOR = 100 # Track ball speed
-MAP_SIZE =21
-
-MOVE_FRONT = b'w'
-MOVE_BACK = b's'
-MOVE_RIGHT = b'a'
-MOVE_LEFT = b'd'
-
-
-BOTTOM_LEFT_FRONT = 0
-BOTTOM_LEFT_BACK = 1
-BOTTOM_RIGHT_BACK = 2
-BOTTOM_RIGHT_FRONT = 3
-TOP_LEFT_FRONT = 4
-TOP_LEFT_BACK = 5
-TOP_RIGHT_BACK = 6
-TOP_RIGHT_FRONT = 7
-
-
-UNIT_LENGTH = 0.1
-WALL_HEIGHT = 5*UNIT_LENGTH
-ROAD_HEIGHT = 1*UNIT_LENGTH
-VELOCITY = UNIT_LENGTH*0.5
-
-TICK = 1/FPS
-
-RESULT_TICK_A = True
-RESULT_TICK_B = False
+from settings import *
 
 NP_DTYPE = "float32"
-
 EYE_MATRIX = np.eye(3, dtype=NP_DTYPE)
 ZERO_VECTOR = np.zeros(3, dtype=NP_DTYPE)
 
