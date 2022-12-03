@@ -122,7 +122,6 @@ class CollisionDetector():
             err = min_dist-cur_dist
             self.triggerOnTwoBalls(err, b1, b2)
         
-        
     def triggerOnOneBall(self, n, err, b):
         
         assert np.linalg.norm(n) == 1
