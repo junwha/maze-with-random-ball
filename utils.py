@@ -3,6 +3,7 @@ from OpenGL.GLU import *
 from OpenGL.GLUT import *
 from OpenGL.GL.shaders import *
 import numpy as np
+import math
 from settings import *
 
 EYE_MATRIX = np.eye(3, dtype=NP_DTYPE)
@@ -27,6 +28,21 @@ def getCameraVectors(px, py, pz, ax, ay, az, ux, uy, uz):
     y = np.cross(z, x)
     return (x, y, z)
 
+def rotation(vec, theta):
+    uux = vec[0]
+    uuy = vec[1]
+    uuz = vec[2]
+
+    cos = math.cos(theta)
+    sin = math.sin(theta)
+
+    return np.array([
+        [cos+uux*uux*(1-cos), uux*uuy*(1-cos)-uuz*sin, uux*uuz*(1-cos)+uuy*sin, 0],
+        [uuy*uux*(1-cos)+uuz*sin, cos+uuy*uuy*(1-cos), uuy*uuz*(1-cos)-uux*sin, 0],
+        [uuz*uux*(1-cos)-uuy*sin, uuz*uuy*(1-cos)+uux*sin, cos+uuz*uuz*(1-cos), 0],
+        [0, 0, 0, 1] 
+        ]) 
+    
 def rotationy(deg):
     deg *= np.pi / 180
     c = np.cos(deg)
@@ -90,4 +106,16 @@ def drawCube(size=[0.1, 0.1, 0.1], pos=(0, 0, 0)):
         for i in surface:
             glVertex3f(*f(vertices[i], pos))	
         c += 1				
+    glEnd()
+
+
+def drawTargetMark():
+    glColor3f(1, 1, 1)
+    glBegin(GL_LINES)
+    glVertex3f(-0.000005, 0, -0.00015)
+    glVertex3f(0.000005, 0, -0.00015)
+    glEnd()
+    glBegin(GL_LINES)
+    glVertex3f(0, -0.000005, -0.00015)
+    glVertex3f(0, 0.000005, -0.00015)
     glEnd()
