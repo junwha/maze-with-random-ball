@@ -18,13 +18,14 @@ class IDGenerator:
 class RigidBody():
     _idGenerator = IDGenerator() # Static variable
     
-    def __init__(self, pos, v, radius):
+    def __init__(self, pos, v, radius, reactionable=True):
         self.id = RigidBody._idGenerator.genNewID()
         self._pos = pos
         self.v = v
         self.radius = radius
         self.collisionTargets = set() # Collided objects to this rigid body
         self.collisionRange = [[False, False], [False, False], [False, False]] # Collided constraint lines
+        self.reactionable = reactionable
         
     @property
     def pos(self):
@@ -64,8 +65,13 @@ class RigidBody():
     
 class Player(RigidBody):
     def __init__(self, radius=UNIT_LENGTH, pos=gen_np_f32_array([0, 0, 0, 1]), v=gen_np_f32_array([0, 0, 0, 0])):
-            super().__init__(pos, v, radius)
-
+            super().__init__(pos, v, radius, reactionable=False)
+    def draw(self):
+        glPushMatrix()
+        glTranslatef(*self.pos[:3])
+        glutSolidSphere(self.radius, 100, 100)
+        glPopMatrix()
+        glColor3f(1, 1, 1)
 class Ball(RigidBody):
     def __init__(self, radius=UNIT_LENGTH*0.01, pos=gen_np_f32_array([0, 0, 0, 1]), v=gen_np_f32_array([0, 0, 0.5, 0]), c=gen_np_f32_array([1, 1, 1])): 
         self.c = c # Color
@@ -78,9 +84,6 @@ class Ball(RigidBody):
         glutSolidSphere(self.radius, 100, 100)
         glPopMatrix()
         glColor3f(1, 1, 1)
-
-
-
 class CollisionDetector():
     def __init__(self, cLines):
         assert cLines[0][0] < cLines[0][1] and cLines[1][0] < cLines[1][1] and cLines[2][0] < cLines[2][1]
@@ -124,8 +127,14 @@ class CollisionDetector():
         
     def triggerOnRigidBody(self, n, err, b):
         assert np.linalg.norm(n) == 1
+        
+        if b is Player:
+            err += 0.05
+            
         b.pos = b.pos + n*err # Error correction
-        b.v = b.v - (2 * (b.v@n))*n 
+        
+        if b.reactionable:
+            b.v = b.v - (2 * (b.v@n))*n 
 
     def triggerOnTwoRigidBody(self, err, b1: RigidBody, b2: RigidBody):
         normal = b2.pos-b1.pos 
@@ -137,5 +146,7 @@ class CollisionDetector():
         b1.pos = b1.pos - unitNormal*(err/2) # Error correction
         b2.pos = b2.pos + unitNormal*(err/2)
         
-        b1.v = b1.v - normalB1 + normalB2
-        b2.v = b2.v - normalB2 + normalB1
+        if b1.reactionable:
+            b1.v = b1.v - normalB1 + normalB2
+        if b2.reactionable:
+            b2.v = b2.v - normalB2 + normalB1

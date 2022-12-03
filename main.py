@@ -24,7 +24,7 @@ class Viewer:
         self.degx = 0
         self.degy = -90
         
-        self.player = Player(radius=0.3*UNIT_LENGTH, pos=gen_np_f32_array([-1*UNIT_LENGTH, UNIT_LENGTH*ROAD_HEIGHT+2*UNIT_LENGTH, UNIT_LENGTH, 1]), v=gen_np_f32_array([0, 0, 0, 0]))
+        self.player = Player(radius=0.4*UNIT_LENGTH, pos=gen_np_f32_array([-1*UNIT_LENGTH, UNIT_LENGTH*ROAD_HEIGHT+2*UNIT_LENGTH, UNIT_LENGTH, 1]), v=gen_np_f32_array([0, 0, 0, 0]))
         # self.player.pos = gen_np_f32_array([-1*UNIT_LENGTH, UNIT_LENGTH*ROAD_HEIGHT+2*UNIT_LENGTH, UNIT_LENGTH, .0])
         self.w = 800
         self.h = 800
@@ -132,7 +132,7 @@ class Viewer:
         drawTargetMark()
         
         self.cameraMatrix = rotationx(self.degx) @ rotationy(self.degy)
-        pos = gen_np_f32_array([0, 0, 0, 0]) @ self.cameraMatrix + self.player.pos 
+        pos = gen_np_f32_array([0, 0, 0, 0]) @ self.cameraMatrix + self.player.pos
         at = gen_np_f32_array([0, 0, -d, 0]) @ self.cameraMatrix + self.player.pos
         up = (gen_np_f32_array([0, 1, 0, 0])) @ self.cameraMatrix
         self.light(pos=(0, 0, 0, 1.0)) # (pos[0], pos[1], pos[2]
@@ -176,7 +176,7 @@ class Viewer:
                 
         for ball in self.balls:
             ball.draw()    
-        
+        self.player.draw
         
        
         ##### For testing #####
@@ -242,8 +242,8 @@ class Viewer:
             
             # theta = l/r
             
-            self.degx += (self.ry-y)/1
-            self.degy += (x-self.rx)/1
+            self.degx += (self.ry-y)*SENSITIVITY_Y
+            self.degy += (x-self.rx)*SENSITIVITY_X
             self.rx = x
             self.ry = y
         if x <= 0 or y <= 0 or x > self.h-1 or y > self.w-1:
