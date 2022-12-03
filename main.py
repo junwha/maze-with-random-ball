@@ -29,6 +29,8 @@ class Viewer:
         self.maze = maze.getMaze(MAP_SIZE)
         self.detectors =[[None for j in range(MAP_SIZE)] for i in range(MAP_SIZE)]
         
+        
+        ##### For testing #####
         # self.sampleBalls = [
         #     Ball(pos=gen_np_f32_array([-1*UNIT_LENGTH, 1.5*UNIT_LENGTH, -1*UNIT_LENGTH]), v=gen_np_f32_array([0, 0.5, 0.5])),
         #     Ball(pos=gen_np_f32_array([-1*UNIT_LENGTH, 1*UNIT_LENGTH, 1*UNIT_LENGTH]), v=gen_np_f32_array([0, 0, 0.5])),
@@ -40,9 +42,7 @@ class Viewer:
         #     self.collisionDetector.addBall(ball)
         
         self.balls = []
-        
-        # self.balls.append(Ball(radius=0.01, pos=gen_np_f32_array([0*UNIT_LENGTH, ROAD_HEIGHT*UNIT_LENGTH + UNIT_LENGTH, 1*UNIT_LENGTH]), v=np.random.rand(3), c=np.random.rand(3))) 
-        
+                
         for i in range(MAP_SIZE):
             for j in range(MAP_SIZE):                
                 if self.maze[i][j] == ROAD:
@@ -137,10 +137,8 @@ class Viewer:
         gluLookAt(*(pos[:3]), *(at[:3]), *(up[:3]))
 
         glColor3f(1, 1, 1)
-        # drawCube(size=(0.1, 0.1, 0.1),axi pos=(0.1, 0.1, 0.1))
-        # glColor3f(0, 0, 1)
-        # drawCube(size=(0.1, 0.1, 0.1), pos=(0.3, 0.1, 0.1))
         
+        ##### For testing #####
         # self.sampleBalls[0].update()
         # self.sampleBalls[1].update()
         # self.sampleBalls[2].update()
@@ -157,31 +155,7 @@ class Viewer:
         
         for ball in self.balls:
             ball.update()
-            i, j = round(ball.pos[0]/UNIT_LENGTH), round(ball.pos[2]/UNIT_LENGTH) # int((ball.pos[0]+0.5*UNIT_LENGTH)//UNIT_LENGTH), int((ball.pos[2]+0.5*UNIT_LENGTH)//UNIT_LENGTH)
-            # glColor3f(1, 0, 0)
-            # glBegin(GL_LINES)
-            # glVertex3f(i*UNIT_LENGTH, 0, j*UNIT_LENGTH)
-            # glVertex3f(i*UNIT_LENGTH, WALL_HEIGHT*UNIT_LENGTH, j*UNIT_LENGTH)
-            # glEnd()
-            
-            # glColor3f(0, 0, 1)
-            # glBegin(GL_LINES)
-            # glVertex3f(ball.pos[0], 0, ball.pos[2])
-            # glVertex3f(ball.pos[0], WALL_HEIGHT*UNIT_LENGTH, ball.pos[2])
-            # glEnd()
-            # glColor3f(1, 1, 1)
-            
-            # glColor3f(0, 1, 0)
-            # glBegin(GL_LINES)
-            # glVertex3f(ball.pos[0]-ball.radius, ROAD_HEIGHT*UNIT_LENGTH+0.01, ball.pos[2])
-            # glVertex3f(ball.pos[0]+ball.radius, ROAD_HEIGHT*UNIT_LENGTH+0.01, ball.pos[2])
-            # glEnd()
-            # glBegin(GL_LINES)
-            # glVertex3f(ball.pos[0], ROAD_HEIGHT*UNIT_LENGTH+0.01, ball.pos[2]-ball.radius)
-            # glVertex3f(ball.pos[0], ROAD_HEIGHT*UNIT_LENGTH+0.01, ball.pos[2]+ball.radius)
-            # glEnd()
-            # glColor3f(1, 1, 1)
-            
+            i, j = round(ball.pos[0]/UNIT_LENGTH), round(ball.pos[2]/UNIT_LENGTH)  
             
             if i < 0 or j < 0 or i >= MAP_SIZE or j >= MAP_SIZE or self.detectors[i][j] == None:
                 pass
@@ -197,10 +171,10 @@ class Viewer:
         for ball in self.balls:
             ball.draw()    
         
-        # self.collisionDetector.testAll()
         
        
-        
+        ##### For testing #####
+        # self.collisionDetector.testAll()
         # self.sampleBalls[0].draw()
         # self.sampleBalls[1].draw()
         # self.sampleBalls[2].draw()

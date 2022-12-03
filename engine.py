@@ -133,7 +133,6 @@ class CollisionDetector():
         
     def triggerOnOneBall(self, n, err, b):
         assert np.linalg.norm(n) == 1
-        # print(f"trigger on {b.id}")
         b.pos = b.pos + n*err # Error correction
         b.v = b.v - (2 * (b.v@n))*n 
 
