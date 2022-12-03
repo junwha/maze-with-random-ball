@@ -204,9 +204,8 @@ class Viewer:
 
     def updateVelocity(self, a):
         cur_v = (self.player.v @ a)
-        print(cur_v)
         if cur_v < 0:
-            self.player.v += cur_v*a
+            self.player.v += ZERO_VECTOR()
         if np.linalg.norm(self.player.v+a) < MAX_VELOCITY:
             self.player.v += a
             
