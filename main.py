@@ -129,8 +129,11 @@ class Viewer:
         glMatrixMode(GL_MODELVIEW)
         glLoadIdentity()
         
+        drawGameEnd()
         drawTargetMark()
         
+        
+                
         self.cameraMatrix = rotationx(self.degx) @ rotationy(self.degy)
         pos = gen_np_f32_array([0, 0, 0, 0]) @ self.cameraMatrix + self.player.pos
         at = gen_np_f32_array([0, 0, -d, 0]) @ self.cameraMatrix + self.player.pos

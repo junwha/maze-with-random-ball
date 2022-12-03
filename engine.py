@@ -150,3 +150,17 @@ class CollisionDetector():
             b1.v = b1.v - normalB1 + normalB2
         if b2.reactionable:
             b2.v = b2.v - normalB2 + normalB1
+            
+def drawDeadCharacter():
+    bitMap = [
+        [1, 1, 1, 0, 0, 1, 1, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 1, 0],
+        [1, 0, 0, 1, 0, 1, 0, 0, 0, 0, 1, 0, 0, 1, 0, 1, 0, 0, 1],
+        [1, 0, 0, 1, 0, 1, 0, 0, 0, 0, 1, 0, 0, 1, 0, 1, 0, 0, 1],
+        [1, 1, 1, 0, 0, 1, 1, 1, 1, 0, 1, 0, 0, 1, 0, 1, 1, 1, 0]
+    ]
+    
+    for x in range(len(bitMap[0])):
+        for y in range(len(bitMap)):
+            CHARACTER_UNIT = 0.001
+            if bitMap[y][x] == 1:
+                drawCube(size=[CHARACTER_UNIT, CHARACTER_UNIT, CHARACTER_UNIT], pos=[CHARACTER_UNIT*x, CHARACTER_UNIT*y, 0.01])
