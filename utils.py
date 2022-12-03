@@ -121,6 +121,9 @@ def drawTargetMark():
     glEnd()
                
 def drawGameEnd():
+    glClearColor(1.0, 1.0, 1.0, 1.0);
+
+
     bitMap = [
         [1, 1, 1, 0, 0, 1, 1, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0],
         [1, 0, 0, 1, 0, 1, 0, 0, 0, 0, 1, 0, 0, 1, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0],
@@ -132,7 +135,6 @@ def drawGameEnd():
         glColor3f(1, 0, 0)
         glPointSize(25)
         glBegin(GL_POINTS)
-        
         for y in range(len(bitMap)):
             CHARACTER_UNIT = 0.000005
             if bitMap[y][x] == 1:

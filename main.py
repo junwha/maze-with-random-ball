@@ -8,6 +8,7 @@ from settings import *
 from utils import *
 from engine import *
 
+SPAWN_PLACE = gen_np_f32_array([-3*UNIT_LENGTH, UNIT_LENGTH*ROAD_HEIGHT+1*UNIT_LENGTH, UNIT_LENGTH, 1])
 class Viewer:
     def __init__(self):
         self.cameraMatrix = gen_np_f32_array([
@@ -24,13 +25,13 @@ class Viewer:
         self.degx = 0
         self.degy = -90
         
-        self.player = Player(radius=0.4*UNIT_LENGTH, pos=gen_np_f32_array([-1*UNIT_LENGTH, UNIT_LENGTH*ROAD_HEIGHT+2*UNIT_LENGTH, UNIT_LENGTH, 1]), v=gen_np_f32_array([0, 0, 0, 0]))
+        self.player = Player(radius=0.4*UNIT_LENGTH, pos=SPAWN_PLACE, v=gen_np_f32_array([0, 0, 0, 0]))
         # self.player.pos = gen_np_f32_array([-1*UNIT_LENGTH, UNIT_LENGTH*ROAD_HEIGHT+2*UNIT_LENGTH, UNIT_LENGTH, .0])
         self.w = 800
         self.h = 800
         self.maze = maze.getMaze(MAP_SIZE)
         self.detectors =[[None for j in range(MAP_SIZE)] for i in range(MAP_SIZE)]
-        
+        self.gameover = False
         
         ##### For testing #####
         # self.sampleBalls = [
@@ -129,10 +130,14 @@ class Viewer:
         glMatrixMode(GL_MODELVIEW)
         glLoadIdentity()
         
-        drawGameEnd()
-        drawTargetMark()
-        
-        
+        if self.gameover:
+            self.player.pos = gen_np_f32_array([-1*UNIT_LENGTH, UNIT_LENGTH*ROAD_HEIGHT+10*UNIT_LENGTH, UNIT_LENGTH, 1])
+            # self.light(pos=[0, 0, -0.00001])
+            drawGameEnd()
+            # drawTargetMark()
+        else:
+            drawTargetMark()
+
                 
         self.cameraMatrix = rotationx(self.degx) @ rotationy(self.degy)
         pos = gen_np_f32_array([0, 0, 0, 0]) @ self.cameraMatrix + self.player.pos
@@ -147,7 +152,7 @@ class Viewer:
         # self.sampleBalls[0].update()
         # self.sampleBalls[1].update()
         # self.sampleBalls[2].update()        
-        
+    
         for i in range(MAP_SIZE):
             for j in range(MAP_SIZE):                
                 if self.maze[i][j] == WALL: # Wall
@@ -176,10 +181,17 @@ class Viewer:
                 if self.maze[i][j] == ROAD:
                     self.detectors[i][j].testAll()
                     pass
-                
+        if len(self.player.collisionTargets) > 0:
+            self.gameover = True
+            self.rx = 0
+            self.ry = 0
+            self.fov = 60
+            self.zoom = 1
+            self.degx = 0
+            self.degy = -90
+
         for ball in self.balls:
             ball.draw()    
-        self.player.draw
         
        
         ##### For testing #####
@@ -187,7 +199,7 @@ class Viewer:
         # self.sampleBalls[0].draw()
         # self.sampleBalls[1].draw()
         # self.sampleBalls[2].draw()
-        
+
         glutSwapBuffers()
 
     def keyboard(self, key, x, y):
@@ -232,19 +244,16 @@ class Viewer:
                 self.rx = x
                 self.ry = y
                 self.mode = (self.mode+1)%2
+                    
 
     def motion(self, x, y):
         if self.mode == 1:
-            # pos = gen_np_f32_array([0, 0, 0, 0]) @ self.cameraMatrix + self.player.pos 
-            # at = gen_np_f32_array([0, 0, -1, 0]) @ self.cameraMatrix + self.player.pos
-            # atVec = at-pos
-            # atVec = atVec/np.linalg(atVec)
-            
-            # l =  ((x-self.rx)**2+(y-self.ry)**2)**0.5
-            # r = 1
-            
-            # theta = l/r
-            
+            self.cameraMatrix = gen_np_f32_array([
+            [1, 0, 0, 0],
+            [0, 1, 0, 0],
+            [0, 0, 1, 0],
+            [0, 0, 0, 1]
+            ])
             self.degx += (self.ry-y)*SENSITIVITY_Y
             self.degy += (x-self.rx)*SENSITIVITY_X
             self.rx = x
