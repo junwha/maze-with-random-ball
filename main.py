@@ -55,13 +55,13 @@ TICK = 1/FPS
 RESULT_TICK_A = True
 RESULT_TICK_B = False
 
-EYE_MATRIX = np.eye(3)
+NP_DTYPE = "float32"
+
+EYE_MATRIX = np.eye(3, dtype=NP_DTYPE)
+ZERO_VECTOR = np.zeros(3, dtype=NP_DTYPE)
 
 def gen_np_f32_array(array):
-    return np.array(array, dtype="float32")
-
-ZERO_VECTOR = gen_np_f32_array([0, 0, 0])
-
+    return np.array(array, dtype=NP_DTYPE)
 
 def abs(x):
     if x < 0:
@@ -143,22 +143,52 @@ def drawCube(size=[0.1, 0.1, 0.1], pos=(0, 0, 0)):
             glVertex3f(*f(vertices[i], pos))	
         c += 1				
     glEnd()
+
+class IDGenerator:
+    def __init__(self):
+        self.id = -1
+        
+    def genNewID(self):
+        self.id += 1
+        return self.id
 class RigidBody():
+    _idGenerator = IDGenerator() # Static variable
+    
     def __init__(self, pos, v, result_status=RESULT_TICK_A):
+        self.id = RigidBody._idGenerator.genNewID()
         self.pos = pos
         self.v = v
         self.result_status = result_status
-    
+        self.collisionTargets = set() # Collided objects to this rigid body
+        self.collisionRange = [[False, False]]*3 # Collided constraint lines
+        
     # Result Status represents whether current result of Object is belongs to A or B.
     def get_result_status(self):
         return self.result_status
     
+    def resetCollision(self):
+        for i in range(3):
+            for j in range(2):
+                self.collisionRange[i][j] = False
+        self.collisionTargets = set()
+    
     def update(self):
+        self.resetCollision() # Reset collisionObjects for new state
         self.pos += self.v*TICK 
 
-    # def apply_collision_result(self, v):
-    #     self.v = v
-    #     self.result_status = RESULT_TICK_B if RESULT_TICK_A else RESULT_TICK_A
+    # [RigidBody-RigidBody] Test collision was processed before, if not, return True
+    def collidedWithTarget(self, target: 'RigidBody'): 
+        if target.id in self.collisionTargets:
+            return False
+        self.collisionTargets.append(target.id)
+        return True
+
+    # [RigidBody-Line] Test collision was processed before, if not, return True
+    def collideWithLine(self, ax, i):
+        if self.collisionRange[ax][i]:
+            return False
+        self.collisionRange[ax][i] = True
+        return True
     
     def draw(self):
         pass 
@@ -166,6 +196,7 @@ class RigidBody():
 class Ball(RigidBody):
     def __init__(self, radius=UNIT_LENGTH*0.5, pos=gen_np_f32_array([0, 0, 0]), v=gen_np_f32_array([0, 0, 0.5])): 
         self.radius = radius
+        
         super().__init__(pos, v)
         
     def draw(self):
@@ -272,6 +303,7 @@ class Viewer:
         self.collisionDetector = CollisionDetector()
         for ball in self.sample_ball:
             self.collisionDetector.addBall(ball)
+            print(ball.id)
         
     def light(self, pos=[0, 50, 100.0, 1]):
         glEnable(GL_COLOR_MATERIAL)
