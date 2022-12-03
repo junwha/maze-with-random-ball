@@ -61,8 +61,13 @@ class RigidBody():
     def draw(self):
         pass 
     
+class Player(RigidBody):
+    def __init__(self, radius=UNIT_LENGTH, pos=gen_np_f32_array([0, 0, 0, 1]), v=gen_np_f32_array([0, 0, 0, 0])):
+            self.radius = radius
+            super().__init__(pos, v)
+
 class Ball(RigidBody):
-    def __init__(self, radius=UNIT_LENGTH*0.01, pos=gen_np_f32_array([0, 0, 0]), v=gen_np_f32_array([0, 0, 0.5]), c=gen_np_f32_array([1, 1, 1])): 
+    def __init__(self, radius=UNIT_LENGTH*0.01, pos=gen_np_f32_array([0, 0, 0, 1]), v=gen_np_f32_array([0, 0, 0.5, 0]), c=gen_np_f32_array([1, 1, 1])): 
         self.radius = radius
         self.c = c # Color
         super().__init__(pos, v)
@@ -70,7 +75,7 @@ class Ball(RigidBody):
     def draw(self):
         glColor3f(*self.c)
         glPushMatrix()
-        glTranslatef(*self.pos)
+        glTranslatef(*self.pos[:3])
         glutSolidSphere(self.radius, 100, 100)
         glPopMatrix()
         glColor3f(1, 1, 1)
@@ -82,17 +87,38 @@ class CollisionDetector():
         self.balls = {}
         assert cLines[0][0] < cLines[0][1] and cLines[1][0] < cLines[1][1] and cLines[2][0] < cLines[2][1]
         self.cLines = cLines
+        self.player = None
         
     def testAll(self):
+        if self.player != None:
+            self.testCollisionOnPlayer()
         for key1 in self.balls.keys():
             self.testCollisionOnOneBall(self.balls[key1])
             for key2 in self.balls.keys():
                 if key1 < key2:
                     self.testCollisionOnTwoBalls(self.balls[key1], self.balls[key2])
                     
-    def addBall(self, b):
+    def addBall(self, b: Ball):
         self.balls[b.id] = b
 
+    def placePlayer(self, player: Player):
+        self.player = player
+    
+    def testCollisionOnPlayer(self):
+        p = self.player
+        for i in range(3):
+            normal = ZERO_VECTOR
+            err = 0
+            if p.pos[i]-p.radius <= self.cLines[i][0]:
+                if p.tryCollideWithLine(i, 0):
+                    err = self.cLines[i][0] - (p.pos[i]-p.radius) + 0.1
+                           
+            elif p.pos[i]+p.radius >= self.cLines[i][1]:
+                if p.tryCollideWithLine(i, 1):
+                    err = (p.pos[i]+p.radius)-self.cLines[i][1] + 0.1
+            p.pos = p.pos + normal*err 
+
+        
     def testCollisionOnOneBall(self, b: Ball):
         for i in range(3):
             if b.pos[i]-b.radius <= self.cLines[i][0]:

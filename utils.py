@@ -6,8 +6,8 @@ import numpy as np
 import math
 from settings import *
 
-EYE_MATRIX = np.eye(3, dtype=NP_DTYPE)
-ZERO_VECTOR = np.zeros(3, dtype=NP_DTYPE)
+EYE_MATRIX = np.eye(4, dtype=NP_DTYPE)
+ZERO_VECTOR = np.zeros(4, dtype=NP_DTYPE)
 
 def gen_np_f32_array(array):
     return np.array(array, dtype=NP_DTYPE)
@@ -28,7 +28,7 @@ def getCameraVectors(px, py, pz, ax, ay, az, ux, uy, uz):
     y = np.cross(z, x)
     return (x, y, z)
 
-def rotation(vec, theta):
+def rotation(vec, theta): # TODO: utilize this function
     uux = vec[0]
     uuy = vec[1]
     uuz = vec[2]
