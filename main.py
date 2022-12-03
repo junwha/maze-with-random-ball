@@ -141,11 +141,7 @@ class Viewer:
         ##### For testing #####
         # self.sampleBalls[0].update()
         # self.sampleBalls[1].update()
-        # self.sampleBalls[2].update()
-        drawCube(size=(UNIT_LENGTH, UNIT_LENGTH*WALL_HEIGHT, UNIT_LENGTH), pos=(0, 0, -1))
-        drawCube(size=(UNIT_LENGTH, UNIT_LENGTH*WALL_HEIGHT, UNIT_LENGTH), pos=(0, 1, 0))
-        drawCube(size=(UNIT_LENGTH, UNIT_LENGTH*WALL_HEIGHT, UNIT_LENGTH), pos=(1, 0, 0))
-        
+        # self.sampleBalls[2].update()        
         
         for i in range(MAP_SIZE):
             for j in range(MAP_SIZE):                
