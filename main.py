@@ -8,6 +8,7 @@ from settings import *
 from utils import *
 from engine import *
 
+SPAWN_PLACE = gen_np_f32_array([-3*UNIT_LENGTH, UNIT_LENGTH*ROAD_HEIGHT+1*UNIT_LENGTH, UNIT_LENGTH, 1])
 class Viewer:
     def __init__(self):
         self.cameraMatrix = gen_np_f32_array([
@@ -23,12 +24,14 @@ class Viewer:
         self.zoom = 1
         self.degx = 0
         self.degy = -90
-        self.trans = gen_np_f32_array([-10*UNIT_LENGTH, UNIT_LENGTH*10, UNIT_LENGTH, .0])
+        
+        self.player = Player(radius=0.5*UNIT_LENGTH, pos=SPAWN_PLACE, v=gen_np_f32_array([0, 0, 0, 0]))
+        # self.player.pos = gen_np_f32_array([-1*UNIT_LENGTH, UNIT_LENGTH*ROAD_HEIGHT+2*UNIT_LENGTH, UNIT_LENGTH, .0])
         self.w = 800
         self.h = 800
         self.maze = maze.getMaze(MAP_SIZE)
         self.detectors =[[None for j in range(MAP_SIZE)] for i in range(MAP_SIZE)]
-        
+        self.gameover = False
         
         ##### For testing #####
         # self.sampleBalls = [
@@ -39,14 +42,14 @@ class Viewer:
         
         # self.collisionDetector = CollisionDetector(gen_np_f32_array([[-3*UNIT_LENGTH, UNIT_LENGTH], [-3*UNIT_LENGTH, 3*UNIT_LENGTH], [-3*UNIT_LENGTH, 3*UNIT_LENGTH]]))
         # for ball in self.sampleBalls:
-        #     self.collisionDetector.addBall(ball)
+        #     self.collisionDetector.addRigidBody(ball)
         
         self.balls = []
                 
         for i in range(MAP_SIZE):
             for j in range(MAP_SIZE):                
-                if self.maze[i][j] == ROAD:
-                    self.balls.append(Ball(radius=0.01, pos=gen_np_f32_array([i*UNIT_LENGTH, ROAD_HEIGHT*UNIT_LENGTH + UNIT_LENGTH, j*UNIT_LENGTH]), v=np.random.rand(3), c=np.random.rand(3)))             
+                if self.maze[i][j] == ROAD and i%2 == 1 and j%2 == 1:
+                    self.balls.append(Ball(radius=0.01, pos=gen_np_f32_array([i*UNIT_LENGTH, ROAD_HEIGHT*UNIT_LENGTH + UNIT_LENGTH, j*UNIT_LENGTH, 1]), v=np.append(np.random.rand(3), 0), c=np.random.rand(3)))             
 
     def light(self, pos=[0, 50, 100.0, 1]):
         glEnable(GL_COLOR_MATERIAL)
@@ -127,11 +130,18 @@ class Viewer:
         glMatrixMode(GL_MODELVIEW)
         glLoadIdentity()
         
-        drawTargetMark()
-        
+        if self.gameover:
+            self.player.pos = gen_np_f32_array([-1*UNIT_LENGTH, UNIT_LENGTH*ROAD_HEIGHT+10*UNIT_LENGTH, UNIT_LENGTH, 1])
+            # self.light(pos=[0, 0, -0.00001])
+            drawGameEnd()
+            # drawTargetMark()
+        else:
+            drawTargetMark()
+
+                
         self.cameraMatrix = rotationx(self.degx) @ rotationy(self.degy)
-        pos = gen_np_f32_array([0, 0, 0, 0]) @ self.cameraMatrix + self.trans 
-        at = gen_np_f32_array([0, 0, -d, 0]) @ self.cameraMatrix + self.trans
+        pos = gen_np_f32_array([0, 0, 0, 0]) @ self.cameraMatrix + self.player.pos
+        at = gen_np_f32_array([0, 0, -d, 0]) @ self.cameraMatrix + self.player.pos
         up = (gen_np_f32_array([0, 1, 0, 0])) @ self.cameraMatrix
         self.light(pos=(0, 0, 0, 1.0)) # (pos[0], pos[1], pos[2]
         gluLookAt(*(pos[:3]), *(at[:3]), *(up[:3]))
@@ -142,7 +152,7 @@ class Viewer:
         # self.sampleBalls[0].update()
         # self.sampleBalls[1].update()
         # self.sampleBalls[2].update()        
-        
+    
         for i in range(MAP_SIZE):
             for j in range(MAP_SIZE):                
                 if self.maze[i][j] == WALL: # Wall
@@ -151,60 +161,81 @@ class Viewer:
                     drawCube(size=(UNIT_LENGTH, UNIT_LENGTH*ROAD_HEIGHT, UNIT_LENGTH), pos=(UNIT_LENGTH*i, UNIT_LENGTH*ROAD_HEIGHT/2, UNIT_LENGTH*j))
                     self.detectors[i][j] = CollisionDetector(self.constructCLines(i, j, UNIT_LENGTH))
                     # for ball in self.balls:
-                    #     self.detectors[i][j].addBall(ball)
+                    #     self.detectors[i][j].addRigidBody(ball)
         
-        for ball in self.balls:
-            ball.update()
-            i, j = round(ball.pos[0]/UNIT_LENGTH), round(ball.pos[2]/UNIT_LENGTH)  
+        rigidBodies = []
+        rigidBodies.extend(self.balls)
+        rigidBodies.append(self.player)
+        for rigidBody in rigidBodies:
+            rigidBody.update()
+            i, j = round(rigidBody.pos[0]/UNIT_LENGTH), round(rigidBody.pos[2]/UNIT_LENGTH)  
             
             if i < 0 or j < 0 or i >= MAP_SIZE or j >= MAP_SIZE or self.detectors[i][j] == None:
                 pass
             else:
-                self.detectors[i][j].addBall(ball)
-                
+                self.detectors[i][j].addRigidBody(rigidBody)
+               
+        
         for i in range(MAP_SIZE):
             for j in range(MAP_SIZE):  
                 if self.maze[i][j] == ROAD:
                     self.detectors[i][j].testAll()
                     pass
-                
+        if len(self.player.collisionTargets) > 0:
+            self.gameover = True
+            self.rx = 0
+            self.ry = 0
+            self.fov = 60
+            self.zoom = 1
+            self.degx = 0
+            self.degy = -90
+
         for ball in self.balls:
             ball.draw()    
         
-        
-       
+
         ##### For testing #####
         # self.collisionDetector.testAll()
         # self.sampleBalls[0].draw()
         # self.sampleBalls[1].draw()
         # self.sampleBalls[2].draw()
-        
+
         glutSwapBuffers()
 
+    def updateVelocity(self, a):
+        cur_v = (self.player.v @ a)
+        if cur_v < 0:
+            self.player.v += ZERO_VECTOR()
+        if np.linalg.norm(self.player.v+a) < MAX_VELOCITY:
+            self.player.v += a
+            
     def keyboard(self, key, x, y):
         d = 10
         if self.fov > 0:
             d = 1/np.tan(np.radians(self.fov / 2))
-        pos = gen_np_f32_array([0, 0, 0, 0]) @ self.cameraMatrix + self.trans 
-        at = gen_np_f32_array([0, 0, -d, 0]) @ self.cameraMatrix + self.trans
+        pos = gen_np_f32_array([0, 0, 0, 0]) @ self.cameraMatrix + self.player.pos 
+        at = gen_np_f32_array([0, 0, -d, 0]) @ self.cameraMatrix + self.player.pos
         up = (gen_np_f32_array([0, 1, 0, 0])) @ self.cameraMatrix
-        left, _, front = getCameraVectors(*(pos[:3]), *(at[:3]), *(up[:3]))
+        left, _, back = getCameraVectors(*(pos[:3]), *(at[:3]), *(up[:3]))
         left[1] = 0
         if np.linalg.norm(left) != 0:
             left = left / np.linalg.norm(left)
         left = np.append(left, [0])
-        front[1] = 0
-        if np.linalg.norm(front) != 0:
-            front = front / np.linalg.norm(front)
-        front = np.append(front, [0])
+        back[1] = 0
+        if np.linalg.norm(back) != 0:
+            back = back / np.linalg.norm(back)
+        back = np.append(back, [0])
         if key == MOVE_FRONT:
-            self.trans -= front * VELOCITY
+            self.updateVelocity(-back)
         if key == MOVE_BACK:
-            self.trans += front * VELOCITY
+            self.updateVelocity(back)
         if key == MOVE_RIGHT:
-            self.trans -= left * VELOCITY
+            self.updateVelocity(-left)
         if key == MOVE_LEFT:
-            self.trans += left * VELOCITY
+            self.updateVelocity(left)
+        if key == STOP:
+            self.player.v = ZERO_VECTOR()
+
         if key == b'\x1b':
             exit()
 
@@ -223,24 +254,23 @@ class Viewer:
                 self.rx = x
                 self.ry = y
                 self.mode = (self.mode+1)%2
+                    
 
     def motion(self, x, y):
         if self.mode == 1:
-            # pos = gen_np_f32_array([0, 0, 0, 0]) @ self.cameraMatrix + self.trans 
-            # at = gen_np_f32_array([0, 0, -1, 0]) @ self.cameraMatrix + self.trans
-            # atVec = at-pos
-            # atVec = atVec/np.linalg(atVec)
-            
-            # l =  ((x-self.rx)**2+(y-self.ry)**2)**0.5
-            # r = 1
-            
-            # theta = l/r
-            
-            self.degx += (self.ry-y)/5
-            self.degy += (x-self.rx)/5
+            self.cameraMatrix = gen_np_f32_array([
+            [1, 0, 0, 0],
+            [0, 1, 0, 0],
+            [0, 0, 1, 0],
+            [0, 0, 0, 1]
+            ])
+            self.degx += (self.ry-y)*SENSITIVITY_Y
+            self.degy += (x-self.rx)*SENSITIVITY_X
             self.rx = x
             self.ry = y
-
+        if x <= 0 or y <= 0 or x > self.h-1 or y > self.w-1:
+            glutWarpPointer(self.w//2, self.h//2)
+            
     def reshape(self, w, h):
         print(f"window size: {w} x {h}")
         t = min(w, h)

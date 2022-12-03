@@ -18,12 +18,14 @@ class IDGenerator:
 class RigidBody():
     _idGenerator = IDGenerator() # Static variable
     
-    def __init__(self, pos, v):
+    def __init__(self, pos, v, radius, reactionable=True):
         self.id = RigidBody._idGenerator.genNewID()
         self._pos = pos
         self.v = v
+        self.radius = radius
         self.collisionTargets = set() # Collided objects to this rigid body
         self.collisionRange = [[False, False], [False, False], [False, False]] # Collided constraint lines
+        self.reactionable = reactionable
         
     @property
     def pos(self):
@@ -60,56 +62,63 @@ class RigidBody():
     
     def draw(self):
         pass 
-    
+
+class Bullet(RigidBody):
+    def __init__(self, pos, v, radius=UNIT_LENGTH*0.0001, c=gen_np_f32_array([1, 0, 0])): 
+        super().__init__(pos, v, radius, reactionable=False)
+class Player(RigidBody):
+    def __init__(self, radius=UNIT_LENGTH, pos=gen_np_f32_array([0, 0, 0, 1]), v=gen_np_f32_array([0, 0, 0, 0])):
+            super().__init__(pos, v, radius, reactionable=False)
+    def draw(self):
+        glPushMatrix()
+        glTranslatef(*self.pos[:3])
+        glutSolidSphere(self.radius, 100, 100)
+        glPopMatrix()
+        glColor3f(1, 1, 1)
 class Ball(RigidBody):
-    def __init__(self, radius=UNIT_LENGTH*0.01, pos=gen_np_f32_array([0, 0, 0]), v=gen_np_f32_array([0, 0, 0.5]), c=gen_np_f32_array([1, 1, 1])): 
-        self.radius = radius
+    def __init__(self, radius=UNIT_LENGTH*0.01, pos=gen_np_f32_array([0, 0, 0, 1]), v=gen_np_f32_array([0, 0, 0.5, 0]), c=gen_np_f32_array([1, 1, 1])): 
         self.c = c # Color
-        super().__init__(pos, v)
+        super().__init__(pos, v, radius)
         
     def draw(self):
         glColor3f(*self.c)
         glPushMatrix()
-        glTranslatef(*self.pos)
+        glTranslatef(*self.pos[:3])
         glutSolidSphere(self.radius, 100, 100)
         glPopMatrix()
         glColor3f(1, 1, 1)
-
-
-
 class CollisionDetector():
     def __init__(self, cLines):
-        self.balls = {}
         assert cLines[0][0] < cLines[0][1] and cLines[1][0] < cLines[1][1] and cLines[2][0] < cLines[2][1]
         self.cLines = cLines
-        
+        self.rigidBodies = {}
     def testAll(self):
-        for key1 in self.balls.keys():
-            self.testCollisionOnOneBall(self.balls[key1])
-            for key2 in self.balls.keys():
+        for key1 in self.rigidBodies.keys():
+            self.testCollisionOnRigidBody(self.rigidBodies[key1])
+            for key2 in self.rigidBodies.keys():
                 if key1 < key2:
-                    self.testCollisionOnTwoBalls(self.balls[key1], self.balls[key2])
+                    self.testCollisionOnTwoRigidBody(self.rigidBodies[key1], self.rigidBodies[key2])
                     
-    def addBall(self, b):
-        self.balls[b.id] = b
-
-    def testCollisionOnOneBall(self, b: Ball):
+    def addRigidBody(self, b: RigidBody):
+        self.rigidBodies[b.id] = b
+        
+    def testCollisionOnRigidBody(self, b: RigidBody):
         for i in range(3):
             if b.pos[i]-b.radius <= self.cLines[i][0]:
                 if b.tryCollideWithLine(i, 0):
                     normal = EYE_MATRIX[i]
                     err = self.cLines[i][0] - (b.pos[i]-b.radius) 
                     
-                    self.triggerOnOneBall(normal, err, b)
+                    self.triggerOnRigidBody(normal, err, b)
        
             elif b.pos[i]+b.radius >= self.cLines[i][1]:
                 if b.tryCollideWithLine(i, 1):
                     normal = -EYE_MATRIX[i]
                     err = (b.pos[i]+b.radius)-self.cLines[i][1] 
 
-                    self.triggerOnOneBall(normal, err, b)
+                    self.triggerOnRigidBody(normal, err, b)
 
-    def testCollisionOnTwoBalls(self, b1: Ball, b2: Ball):
+    def testCollisionOnTwoRigidBody(self, b1: RigidBody, b2: RigidBody):
         min_dist = b1.radius + b2.radius
         cur_dist = np.linalg.norm(b1.pos-b2.pos)
         
@@ -117,14 +126,20 @@ class CollisionDetector():
             if not b1.tryCollideWithTarget(b2): # Already triggered
                 return 
             err = min_dist-cur_dist
-            self.triggerOnTwoBalls(err, b1, b2)
+            self.triggerOnTwoRigidBody(err, b1, b2)
         
-    def triggerOnOneBall(self, n, err, b):
+    def triggerOnRigidBody(self, n, err, b):
         assert np.linalg.norm(n) == 1
+        
+        if b is Player:
+            err += 0.05
+            
         b.pos = b.pos + n*err # Error correction
-        b.v = b.v - (2 * (b.v@n))*n 
+        
+        if b.reactionable:
+            b.v = b.v - (2 * (b.v@n))*n 
 
-    def triggerOnTwoBalls(self, err, b1: Ball, b2: Ball):
+    def triggerOnTwoRigidBody(self, err, b1: RigidBody, b2: RigidBody):
         normal = b2.pos-b1.pos 
         unitNormal = normal/np.linalg.norm(normal) # unit normal vector from b1 to b2
         
@@ -134,5 +149,8 @@ class CollisionDetector():
         b1.pos = b1.pos - unitNormal*(err/2) # Error correction
         b2.pos = b2.pos + unitNormal*(err/2)
         
-        b1.v = b1.v - normalB1 + normalB2
-        b2.v = b2.v - normalB2 + normalB1
+        if b1.reactionable:
+            b1.v = b1.v - normalB1 + normalB2
+        if b2.reactionable:
+            b2.v = b2.v - normalB2 + normalB1
+ 

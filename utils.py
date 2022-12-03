@@ -6,8 +6,8 @@ import numpy as np
 import math
 from settings import *
 
-EYE_MATRIX = np.eye(3, dtype=NP_DTYPE)
-ZERO_VECTOR = np.zeros(3, dtype=NP_DTYPE)
+EYE_MATRIX = np.eye(4, dtype=NP_DTYPE)
+ZERO_VECTOR = lambda: np.zeros(4, dtype=NP_DTYPE)
 
 def gen_np_f32_array(array):
     return np.array(array, dtype=NP_DTYPE)
@@ -28,7 +28,7 @@ def getCameraVectors(px, py, pz, ax, ay, az, ux, uy, uz):
     y = np.cross(z, x)
     return (x, y, z)
 
-def rotation(vec, theta):
+def rotation(vec, theta): # TODO: utilize this function
     uux = vec[0]
     uuy = vec[1]
     uuz = vec[2]
@@ -119,3 +119,24 @@ def drawTargetMark():
     glVertex3f(0, -0.000005, -0.00015)
     glVertex3f(0, 0.000005, -0.00015)
     glEnd()
+               
+def drawGameEnd():
+    glClearColor(1.0, 1.0, 1.0, 1.0);
+
+
+    bitMap = [
+        [1, 1, 1, 0, 0, 1, 1, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0],
+        [1, 0, 0, 1, 0, 1, 0, 0, 0, 0, 1, 0, 0, 1, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0],
+        [1, 0, 0, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 1, 0, 0, 1, 0, 0, 1, 0, 1, 0, 1, 0, 1, 0],
+        [1, 0, 0, 1, 0, 1, 0, 0, 0, 0, 1, 0, 0, 1, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1],
+        [1, 1, 1, 0, 0, 1, 1, 1, 1, 0, 1, 0, 0, 1, 0, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1]
+    ]
+    for x in range(len(bitMap[0])):
+        glColor3f(1, 0, 0)
+        glPointSize(25)
+        glBegin(GL_POINTS)
+        for y in range(len(bitMap)):
+            CHARACTER_UNIT = 0.005
+            if bitMap[y][x] == 1:
+                glVertex3f(CHARACTER_UNIT*(x-len(bitMap[0])/2), -CHARACTER_UNIT*(y-len(bitMap)/2), -0.15)
+        glEnd()
