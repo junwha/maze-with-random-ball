@@ -5,7 +5,7 @@ from OpenGL.GL.shaders import *
 import numpy as np
 import maze 
 
-FPS = 144
+FPS = 15
 
 MOUSE_MODE_ROTATION = 0
 MOUSE_MODE_TRANSLATION = 1
@@ -45,18 +45,22 @@ TOP_RIGHT_BACK = 6
 TOP_RIGHT_FRONT = 7
 
 
-UNIT_LENGTH = 1
+UNIT_LENGTH = 0.1
 WALL_HEIGHT = 5*UNIT_LENGTH
-ROAD_HEIGHT = 1
+ROAD_HEIGHT = 1*UNIT_LENGTH
 VELOCITY = UNIT_LENGTH*0.5
 
-TICK = 0.05 # 1/FPS
+TICK = 1/FPS
 
 RESULT_TICK_A = True
 RESULT_TICK_B = False
 
+EYE_MATRIX = np.eye(3)
+
 def gen_np_f32_array(array):
     return np.array(array, dtype="float32")
+
+ZERO_VECTOR = gen_np_f32_array([0, 0, 0])
 
 
 def abs(x):
@@ -178,18 +182,17 @@ class ConstraintBox():
         self.cLines = cLines
         
     def testBall(self, b: Ball): # return (normal vector, error) on collision, otherwise 0 vector
-        eye = np.eye(3)
+        
         for i in range(3):
             if (b.pos[i]-b.radius) <= self.cLines[i][0]:
-                return (eye[i], (b.radius-(b.pos[i]-self.cLines[i][0])))
+                return (EYE_MATRIX[i], (b.radius-(b.pos[i]-self.cLines[i][0])))
             elif (b.pos[i]+b.radius) >= self.cLines[i][1]:
-                return (-eye[i], (b.radius-(self.cLines[i][1]-b.pos[i])))
-        zero = gen_np_f32_array([0, 0, 0])
-        return (zero, zero) 
+                return (-EYE_MATRIX[i], (b.radius-(self.cLines[i][1]-b.pos[i])))
+        
+        return (ZERO_VECTOR, ZERO_VECTOR) 
 class CollisionDetector():
     def __init__(self):
         self.balls = []
-        self.boundaries = []
         self.constraintBox = ConstraintBox(cLines=gen_np_f32_array([[-3*UNIT_LENGTH, UNIT_LENGTH], [-3*UNIT_LENGTH, 3*UNIT_LENGTH], [-3*UNIT_LENGTH, 3*UNIT_LENGTH]]))
         # TODO: matrix needed
     
@@ -262,9 +265,9 @@ class Viewer:
         self.h = 800
         self.maze = maze.getMaze(MAP_SIZE)
         self.sample_ball = [
-            Ball(pos=gen_np_f32_array([-1*UNIT_LENGTH, 1.5*UNIT_LENGTH, -1*UNIT_LENGTH]), v=gen_np_f32_array([0, 1, 1])),
-            Ball(pos=gen_np_f32_array([-1*UNIT_LENGTH, 1*UNIT_LENGTH, 1*UNIT_LENGTH]), v=gen_np_f32_array([0, 0, 2])),
-            Ball(pos=gen_np_f32_array([-1*UNIT_LENGTH, 0, 0]), v=gen_np_f32_array([0, -3, 0]))
+            Ball(pos=gen_np_f32_array([-1*UNIT_LENGTH, 1.5*UNIT_LENGTH, -1*UNIT_LENGTH]), v=gen_np_f32_array([0, 0.5, 0.5])),
+            Ball(pos=gen_np_f32_array([-1*UNIT_LENGTH, 1*UNIT_LENGTH, 1*UNIT_LENGTH]), v=gen_np_f32_array([0, 0, 0.5])),
+            Ball(pos=gen_np_f32_array([-1*UNIT_LENGTH, 0, 0]), v=gen_np_f32_array([0, -1, 0]))
         ]
         self.collisionDetector = CollisionDetector()
         for ball in self.sample_ball:
@@ -303,7 +306,7 @@ class Viewer:
         
         glMatrixMode(GL_MODELVIEW)
         glLoadIdentity()
-
+        
         self.cameraMatrix = rotationx(self.degx) @ rotationy(self.degy)
         pos = gen_np_f32_array([0, 0, 0, 0]) @ self.cameraMatrix + self.trans 
         at = gen_np_f32_array([0, 0, -d, 0]) @ self.cameraMatrix + self.trans
@@ -322,11 +325,13 @@ class Viewer:
                 else:
                     drawCube(size=(UNIT_LENGTH, UNIT_LENGTH*ROAD_HEIGHT, UNIT_LENGTH), pos=(UNIT_LENGTH*i, UNIT_LENGTH*ROAD_HEIGHT/2, UNIT_LENGTH*j))
         
-        self.collisionDetector.testAll()
-        
         self.sample_ball[0].update()
         self.sample_ball[1].update()
         self.sample_ball[2].update()
+        
+        self.collisionDetector.testAll()
+        
+       
         
         self.sample_ball[0].draw()
         self.sample_ball[1].draw()
