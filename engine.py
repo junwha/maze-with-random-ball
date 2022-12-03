@@ -90,8 +90,10 @@ class Ball(RigidBody):
 class CollisionDetector():
     def __init__(self, cLines):
         assert cLines[0][0] < cLines[0][1] and cLines[1][0] < cLines[1][1] and cLines[2][0] < cLines[2][1]
-        self.cLines = cLines
-        self.rigidBodies = {}
+        self.cLines = cLines # Constraint lines for the box
+        self.rigidBodies = {} # Rigid bodies contained in the box
+    
+    # Test all rigid body in the box
     def testAll(self):
         for key1 in self.rigidBodies.keys():
             self.testCollisionOnRigidBody(self.rigidBodies[key1])
@@ -153,4 +155,3 @@ class CollisionDetector():
             b1.v = b1.v - normalB1 + normalB2
         if b2.reactionable:
             b2.v = b2.v - normalB2 + normalB1
- 

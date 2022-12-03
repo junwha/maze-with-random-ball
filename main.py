@@ -11,13 +11,15 @@ from engine import *
 SPAWN_PLACE = gen_np_f32_array([-3*UNIT_LENGTH, UNIT_LENGTH*ROAD_HEIGHT+1*UNIT_LENGTH, UNIT_LENGTH, 1])
 class Viewer:
     def __init__(self):
+        self.mode = 0 # 0: non-moving, 1: camera moving
+        
+        # Camera status
         self.cameraMatrix = gen_np_f32_array([
             [1, 0, 0, 0],
             [0, 1, 0, 0],
             [0, 0, 1, 0],
             [0, 0, 0, 1]
         ])
-        self.mode = 0 # 0: default, 1: rotation, 2: translation
         self.rx = 0
         self.ry = 0
         self.fov = 60
@@ -25,13 +27,15 @@ class Viewer:
         self.degx = 0
         self.degy = -90
         
-        self.player = Player(radius=0.5*UNIT_LENGTH, pos=SPAWN_PLACE, v=gen_np_f32_array([0, 0, 0, 0]))
-        # self.player.pos = gen_np_f32_array([-1*UNIT_LENGTH, UNIT_LENGTH*ROAD_HEIGHT+2*UNIT_LENGTH, UNIT_LENGTH, .0])
+        # Window size
         self.w = 800
         self.h = 800
+        
+        self.player = Player(radius=0.5*UNIT_LENGTH, pos=SPAWN_PLACE, v=gen_np_f32_array([0, 0, 0, 0])) # Player Rigidbody
+        
         self.maze = maze.getMaze(MAP_SIZE)
-        self.detectors =[[None for j in range(MAP_SIZE)] for i in range(MAP_SIZE)]
-        self.gameover = False
+        self.detectors =[[None for j in range(MAP_SIZE)] for i in range(MAP_SIZE)] # Each entry of maze has a detector
+        self.gameOver = False
         
         ##### For testing #####
         # self.sampleBalls = [
@@ -45,10 +49,11 @@ class Viewer:
         #     self.collisionDetector.addRigidBody(ball)
         
         self.balls = []
-                
-        for i in range(MAP_SIZE):
+        
+        # Generate random balls
+        for i in range(MAP_SIZE): 
             for j in range(MAP_SIZE):                
-                if self.maze[i][j] == ROAD and i%2 == 1 and j%2 == 1:
+                if self.maze[i][j] == ROAD and i%2 == 1 and j%2 == 1: 
                     self.balls.append(Ball(radius=0.01, pos=gen_np_f32_array([i*UNIT_LENGTH, ROAD_HEIGHT*UNIT_LENGTH + UNIT_LENGTH, j*UNIT_LENGTH, 1]), v=np.append(np.random.rand(3), 0), c=np.random.rand(3)))             
 
     def light(self, pos=[0, 50, 100.0, 1]):
@@ -68,6 +73,7 @@ class Viewer:
         glLightfv(GL_LIGHT0, GL_POSITION, pos)
         glEnable(GL_LIGHT0)
 
+    # Construct Constraint Lines based on its index
     def constructCLines(self, i, j, unit):
         cLines = gen_np_f32_array([[-np.inf, np.inf], [-np.inf, np.inf], [-np.inf, np.inf]])
     
@@ -86,30 +92,31 @@ class Viewer:
         
         cLines[1][0] = UNIT_LENGTH*ROAD_HEIGHT
         cLines[1][1] = UNIT_LENGTH*WALL_HEIGHT
-                
-        glColor3f(1, 0, 0)
-        glLineWidth(3)
-        glBegin(GL_LINES)
-        glVertex3f(cLines[0][0], UNIT_LENGTH*WALL_HEIGHT+0.01, UNIT_LENGTH*j-0.5*UNIT_LENGTH)
-        glVertex3f(cLines[0][0], UNIT_LENGTH*WALL_HEIGHT+0.01, UNIT_LENGTH*j+0.5*UNIT_LENGTH)
-        glEnd()
-        glColor3f(1, 1, 0)
-        glBegin(GL_LINES)
-        glVertex3f(cLines[0][1], UNIT_LENGTH*WALL_HEIGHT+0.01, UNIT_LENGTH*j-0.5*UNIT_LENGTH)
-        glVertex3f(cLines[0][1], UNIT_LENGTH*WALL_HEIGHT+0.01, UNIT_LENGTH*j+0.5*UNIT_LENGTH)
-        glEnd()
+        
+        ### For Visual Debugging ###                
+        # glColor3f(1, 0, 0)
+        # glLineWidth(3)
+        # glBegin(GL_LINES)
+        # glVertex3f(cLines[0][0], UNIT_LENGTH*WALL_HEIGHT+0.01, UNIT_LENGTH*j-0.5*UNIT_LENGTH)
+        # glVertex3f(cLines[0][0], UNIT_LENGTH*WALL_HEIGHT+0.01, UNIT_LENGTH*j+0.5*UNIT_LENGTH)
+        # glEnd()
+        # glColor3f(1, 1, 0)
+        # glBegin(GL_LINES)
+        # glVertex3f(cLines[0][1], UNIT_LENGTH*WALL_HEIGHT+0.01, UNIT_LENGTH*j-0.5*UNIT_LENGTH)
+        # glVertex3f(cLines[0][1], UNIT_LENGTH*WALL_HEIGHT+0.01, UNIT_LENGTH*j+0.5*UNIT_LENGTH)
+        # glEnd()
       
-        glColor3f(1, 0, 0)
-        glBegin(GL_LINES)
-        glVertex3f(UNIT_LENGTH*i-0.5*UNIT_LENGTH, UNIT_LENGTH*WALL_HEIGHT+0.01, cLines[2][0])
-        glVertex3f(UNIT_LENGTH*i+0.5*UNIT_LENGTH, UNIT_LENGTH*WALL_HEIGHT+0.01, cLines[2][0])
-        glEnd()
-        glColor3f(1, 1, 0)
-        glBegin(GL_LINES)
-        glVertex3f(UNIT_LENGTH*i-0.5*UNIT_LENGTH, UNIT_LENGTH*WALL_HEIGHT+0.01, cLines[2][1])
-        glVertex3f(UNIT_LENGTH*i+0.5*UNIT_LENGTH, UNIT_LENGTH*WALL_HEIGHT+0.01, cLines[2][1])
-        glEnd()
-        glColor3f(1, 1, 1)
+        # glColor3f(1, 0, 0)
+        # glBegin(GL_LINES)
+        # glVertex3f(UNIT_LENGTH*i-0.5*UNIT_LENGTH, UNIT_LENGTH*WALL_HEIGHT+0.01, cLines[2][0])
+        # glVertex3f(UNIT_LENGTH*i+0.5*UNIT_LENGTH, UNIT_LENGTH*WALL_HEIGHT+0.01, cLines[2][0])
+        # glEnd()
+        # glColor3f(1, 1, 0)
+        # glBegin(GL_LINES)
+        # glVertex3f(UNIT_LENGTH*i-0.5*UNIT_LENGTH, UNIT_LENGTH*WALL_HEIGHT+0.01, cLines[2][1])
+        # glVertex3f(UNIT_LENGTH*i+0.5*UNIT_LENGTH, UNIT_LENGTH*WALL_HEIGHT+0.01, cLines[2][1])
+        # glEnd()
+        # glColor3f(1, 1, 1)
         
         return cLines
     
@@ -130,11 +137,9 @@ class Viewer:
         glMatrixMode(GL_MODELVIEW)
         glLoadIdentity()
         
-        if self.gameover:
+        if self.gameOver:
             self.player.pos = gen_np_f32_array([-1*UNIT_LENGTH, UNIT_LENGTH*ROAD_HEIGHT+10*UNIT_LENGTH, UNIT_LENGTH, 1])
-            # self.light(pos=[0, 0, -0.00001])
             drawGameEnd()
-            # drawTargetMark()
         else:
             drawTargetMark()
 
@@ -152,7 +157,10 @@ class Viewer:
         # self.sampleBalls[0].update()
         # self.sampleBalls[1].update()
         # self.sampleBalls[2].update()        
-    
+
+        ###########################
+        #### Maze Construction ####
+        ###########################
         for i in range(MAP_SIZE):
             for j in range(MAP_SIZE):                
                 if self.maze[i][j] == WALL: # Wall
@@ -160,9 +168,12 @@ class Viewer:
                 else: # Road
                     drawCube(size=(UNIT_LENGTH, UNIT_LENGTH*ROAD_HEIGHT, UNIT_LENGTH), pos=(UNIT_LENGTH*i, UNIT_LENGTH*ROAD_HEIGHT/2, UNIT_LENGTH*j))
                     self.detectors[i][j] = CollisionDetector(self.constructCLines(i, j, UNIT_LENGTH))
-                    # for ball in self.balls:
-                    #     self.detectors[i][j].addRigidBody(ball)
         
+        #############################
+        #### Collision Detection ####
+        ############################
+        
+        # Assign each rigid body to proper box
         rigidBodies = []
         rigidBodies.extend(self.balls)
         rigidBodies.append(self.player)
@@ -175,14 +186,17 @@ class Viewer:
             else:
                 self.detectors[i][j].addRigidBody(rigidBody)
                
-        
+        # Test for all box
         for i in range(MAP_SIZE):
             for j in range(MAP_SIZE):  
                 if self.maze[i][j] == ROAD:
                     self.detectors[i][j].testAll()
-                    pass
+                    
+        ########################
+        #### Test Game Over ####
+        ########################    
         if len(self.player.collisionTargets) > 0:
-            self.gameover = True
+            self.gameOver = True
             self.rx = 0
             self.ry = 0
             self.fov = 60
@@ -190,6 +204,9 @@ class Viewer:
             self.degx = 0
             self.degy = -90
 
+        ####################
+        #### Draw Scene ####
+        ####################
         for ball in self.balls:
             ball.draw()    
         
@@ -202,6 +219,7 @@ class Viewer:
 
         glutSwapBuffers()
 
+    # Update velocity. if opposite direction has velocity, ignore previous velocity
     def updateVelocity(self, a):
         cur_v = (self.player.v @ a)
         if cur_v < 0:
@@ -225,6 +243,7 @@ class Viewer:
         if np.linalg.norm(back) != 0:
             back = back / np.linalg.norm(back)
         back = np.append(back, [0])
+        
         if key == MOVE_FRONT:
             self.updateVelocity(-back)
         if key == MOVE_BACK:
@@ -248,29 +267,24 @@ class Viewer:
             self.fov = max(self.fov, 0)
 
     def mouse(self, button, state, x, y):
-        
         if button == GLUT_LEFT_BUTTON:
             if state == 0:
                 self.rx = x
                 self.ry = y
                 self.mode = (self.mode+1)%2
                     
-
     def motion(self, x, y):
         if self.mode == 1:
-            self.cameraMatrix = gen_np_f32_array([
-            [1, 0, 0, 0],
-            [0, 1, 0, 0],
-            [0, 0, 1, 0],
-            [0, 0, 0, 1]
-            ])
             self.degx += (self.ry-y)*SENSITIVITY_Y
             self.degy += (x-self.rx)*SENSITIVITY_X
             self.rx = x
             self.ry = y
         if x <= 0 or y <= 0 or x > self.h-1 or y > self.w-1:
-            glutWarpPointer(self.w//2, self.h//2)
-            
+            glutWarpPointer(self.w//2, self.h//2) # Not working on Mac
+    
+    #######################
+    #### Window Resize ####
+    #######################
     def reshape(self, w, h):
         print(f"window size: {w} x {h}")
         t = min(w, h)
@@ -278,6 +292,9 @@ class Viewer:
         self.w = w
         self.h = h
 
+    ########################
+    #### FPS Controller ####
+    ########################
     def timer(self, value):
         glutPostRedisplay()
         glutTimerFunc(1000//FPS, self.timer, FPS)

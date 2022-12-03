@@ -9,7 +9,8 @@ from settings import *
 EYE_MATRIX = np.eye(4, dtype=NP_DTYPE)
 ZERO_VECTOR = lambda: np.zeros(4, dtype=NP_DTYPE)
 
-def gen_np_f32_array(array):
+# Wrapper for generating floating point numpy array
+def gen_np_f32_array(array): 
     return np.array(array, dtype=NP_DTYPE)
 
 def abs(x):
@@ -80,7 +81,7 @@ def drawCube(size=[0.1, 0.1, 0.1], pos=(0, 0, 0)):
         (TOP_RIGHT_BACK, TOP_LEFT_BACK, BOTTOM_LEFT_BACK, BOTTOM_RIGHT_BACK)
     )
     
-    normals = (
+    normals = ( # Normal vectors on each plane
         (1, 0, 0),
         (0, 1, 0),
         (0, 0, 1),
@@ -124,14 +125,14 @@ def drawGameEnd():
     glClearColor(1.0, 1.0, 1.0, 1.0);
 
 
-    bitMap = [
+    bitMap = [ # Pixel Art for "D E A D"
         [1, 1, 1, 0, 0, 1, 1, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0],
         [1, 0, 0, 1, 0, 1, 0, 0, 0, 0, 1, 0, 0, 1, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0],
         [1, 0, 0, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 1, 0, 0, 1, 0, 0, 1, 0, 1, 0, 1, 0, 1, 0],
         [1, 0, 0, 1, 0, 1, 0, 0, 0, 0, 1, 0, 0, 1, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1],
         [1, 1, 1, 0, 0, 1, 1, 1, 1, 0, 1, 0, 0, 1, 0, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1]
     ]
-    for x in range(len(bitMap[0])):
+    for x in range(len(bitMap[0])): # Draw with Vertices
         glColor3f(1, 0, 0)
         glPointSize(25)
         glBegin(GL_POINTS)
