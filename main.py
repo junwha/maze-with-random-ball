@@ -21,8 +21,8 @@ class Viewer:
         self.ry = 0
         self.fov = 60
         self.zoom = 1
-        self.degx = 0.0
-        self.degy = -90.0
+        self.degx = 0
+        self.degy = -90
         self.trans = gen_np_f32_array([-10*UNIT_LENGTH, UNIT_LENGTH*10, UNIT_LENGTH, .0])
         self.w = 800
         self.h = 800
@@ -129,6 +129,16 @@ class Viewer:
         glMatrixMode(GL_MODELVIEW)
         glLoadIdentity()
         
+        glColor3f(1, 1, 1)
+        glBegin(GL_LINES)
+        glVertex3f(-0.000005, 0, -0.00015)
+        glVertex3f(0.000005, 0, -0.00015)
+        glEnd()
+        glBegin(GL_LINES)
+        glVertex3f(0, -0.000005, -0.00015)
+        glVertex3f(0, 0.000005, -0.00015)
+        glEnd()
+        
         self.cameraMatrix = rotationx(self.degx) @ rotationy(self.degy)
         pos = gen_np_f32_array([0, 0, 0, 0]) @ self.cameraMatrix + self.trans 
         at = gen_np_f32_array([0, 0, -d, 0]) @ self.cameraMatrix + self.trans
@@ -142,6 +152,10 @@ class Viewer:
         # self.sampleBalls[0].update()
         # self.sampleBalls[1].update()
         # self.sampleBalls[2].update()
+        drawCube(size=(UNIT_LENGTH, UNIT_LENGTH*WALL_HEIGHT, UNIT_LENGTH), pos=(0, 0, -1))
+        drawCube(size=(UNIT_LENGTH, UNIT_LENGTH*WALL_HEIGHT, UNIT_LENGTH), pos=(0, 1, 0))
+        drawCube(size=(UNIT_LENGTH, UNIT_LENGTH*WALL_HEIGHT, UNIT_LENGTH), pos=(1, 0, 0))
+        
         
         for i in range(MAP_SIZE):
             for j in range(MAP_SIZE):                
@@ -182,7 +196,7 @@ class Viewer:
         glutSwapBuffers()
 
     def keyboard(self, key, x, y):
-        d = 1
+        d = 10
         if self.fov > 0:
             d = 1/np.tan(np.radians(self.fov / 2))
         pos = gen_np_f32_array([0, 0, 0, 0]) @ self.cameraMatrix + self.trans 
@@ -217,36 +231,27 @@ class Viewer:
             self.fov = max(self.fov, 0)
 
     def mouse(self, button, state, x, y):
+        
         if button == GLUT_LEFT_BUTTON:
             if state == 0:
-                self.mode = 1
                 self.rx = x
                 self.ry = y
-            if state == 1:
-                self.mode = 0
+                self.mode = (self.mode+1)%2
 
     def motion(self, x, y):
         if self.mode == 1:
-            d = 1
-            if x > self.rx:
-                self.degy -= d
-            if x < self.rx:
-                self.degy += d
-            if y > self.ry:
-                self.degx += d
-            if y < self.ry:
-                self.degx -= d
-            self.degx = max(self.degx, -90)
-            self.degx = min(self.degx, 90)
-            self.rx = x
-            self.ry = y
-        if self.mode == 2:
-            pos = gen_np_f32_array([0, 0, 1, 0]) @ self.cameraMatrix + self.trans
-            at = gen_np_f32_array([0, 0, 0, 0]) + self.trans
-            up = gen_np_f32_array([0, 1, 0, 0]) @ self.cameraMatrix
-            vx, vy, _ = getCameraVectors(*(pos[:3]), *(at[:3]), *(up[:3]))
-            self.trans -= (x - self.rx) * np.append(vx, [0]) * 0.002
-            self.trans += (y - self.ry) * np.append(vy, [0]) * 0.002
+            # pos = gen_np_f32_array([0, 0, 0, 0]) @ self.cameraMatrix + self.trans 
+            # at = gen_np_f32_array([0, 0, -1, 0]) @ self.cameraMatrix + self.trans
+            # atVec = at-pos
+            # atVec = atVec/np.linalg(atVec)
+            
+            # l =  ((x-self.rx)**2+(y-self.ry)**2)**0.5
+            # r = 1
+            
+            # theta = l/r
+            
+            self.degx += (self.ry-y)/5
+            self.degy += (x-self.rx)/5
             self.rx = x
             self.ry = y
 
@@ -269,13 +274,14 @@ class Viewer:
         glutCreateWindow(b"CS471 Computer Graphics #2")
 
         self.timer(FPS)
+        glutSetCursor(GLUT_CURSOR_NONE)
         glutDisplayFunc(self.display)
         glutKeyboardFunc(self.keyboard)
         glutSpecialFunc(self.special)
         glutMouseFunc(self.mouse)
-        glutMotionFunc(self.motion)
+        glutPassiveMotionFunc(self.motion)
         glutReshapeFunc(self.reshape)
-
+    
         # self.light()
 
         glutMainLoop()

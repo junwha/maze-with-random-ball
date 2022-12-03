@@ -75,19 +75,7 @@ class Ball(RigidBody):
         glPopMatrix()
         glColor3f(1, 1, 1)
 
-# class ConstraintBox():
-#     def __init__(self, cLines=gen_np_f32_array([[-UNIT_LENGTH, UNIT_LENGTH], [-UNIT_LENGTH, UNIT_LENGTH], [-UNIT_LENGTH, UNIT_LENGTH]])): # Initialize constraint lines
-#         assert cLines[0][0] < cLines[0][1] and cLines[1][0] < cLines[1][1] and cLines[2][0] < cLines[2][1]
-#         self.cLines = cLines
-        
-#     def testBall(self, b: Ball): # return (normal vector, error, line) on collision, otherwise 0 vector
-#         for i in range(3):
-#             if (b.pos[i]-b.radius) <= self.cLines[i][0]:
-#                 return (EYE_MATRIX[i], (b.radius-(b.pos[i]-self.cLines[i][0])), (i, 0))
-#             elif (b.pos[i]+b.radius) >= self.cLines[i][1]:
-#                 return (-EYE_MATRIX[i], (b.radius-(self.cLines[i][1]-b.pos[i])), (i, 1))
-        
-#         return (ZERO_VECTOR, ZERO_VECTOR, None) 
+
 
 class CollisionDetector():
     def __init__(self, cLines):
