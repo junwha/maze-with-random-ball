@@ -14,6 +14,7 @@ class IDGenerator:
     def genNewID(self):
         self.id += 1
         return self.id
+    
 class RigidBody():
     _idGenerator = IDGenerator() # Static variable
     
@@ -87,20 +88,18 @@ class ConstraintBox():
     
 class CollisionDetector():
     def __init__(self):
-        self.balls = []
+        self.balls = {}
         self.constraintBox = ConstraintBox(cLines=gen_np_f32_array([[-3*UNIT_LENGTH, UNIT_LENGTH], [-3*UNIT_LENGTH, 3*UNIT_LENGTH], [-3*UNIT_LENGTH, 3*UNIT_LENGTH]]))
-        # TODO: matrix needed
     
     def testAll(self):
-        for i in range(len(self.balls)):
-            self.testCollisionOnOneBall(self.balls[i])
-            for j in range(len(self.balls)):
-                if i < j:
-                    self.testCollisionOnTwoBalls(self.balls[i], self.balls[j])
+        for key1 in self.balls.keys():
+            self.testCollisionOnOneBall(self.balls[key1])
+            for key2 in self.balls.keys():
+                if key1 < key2:
+                    self.testCollisionOnTwoBalls(self.balls[key1], self.balls[key2])
                     
     def addBall(self, b):
-        # TODO: 
-        self.balls.append(b)
+        self.balls[b.id] = b
 
     def testCollisionOnOneBall(self, b: Ball):
         normalFromWall, err, line = self.constraintBox.testBall(b)
