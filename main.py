@@ -41,7 +41,7 @@ class Viewer:
         
         # self.collisionDetector = CollisionDetector(gen_np_f32_array([[-3*UNIT_LENGTH, UNIT_LENGTH], [-3*UNIT_LENGTH, 3*UNIT_LENGTH], [-3*UNIT_LENGTH, 3*UNIT_LENGTH]]))
         # for ball in self.sampleBalls:
-        #     self.collisionDetector.addBall(ball)
+        #     self.collisionDetector.addRigidBody(ball)
         
         self.balls = []
                 
@@ -153,7 +153,7 @@ class Viewer:
                     drawCube(size=(UNIT_LENGTH, UNIT_LENGTH*ROAD_HEIGHT, UNIT_LENGTH), pos=(UNIT_LENGTH*i, UNIT_LENGTH*ROAD_HEIGHT/2, UNIT_LENGTH*j))
                     self.detectors[i][j] = CollisionDetector(self.constructCLines(i, j, UNIT_LENGTH))
                     # for ball in self.balls:
-                    #     self.detectors[i][j].addBall(ball)
+                    #     self.detectors[i][j].addRigidBody(ball)
         
         for ball in self.balls:
             ball.update()
@@ -162,11 +162,11 @@ class Viewer:
             if i < 0 or j < 0 or i >= MAP_SIZE or j >= MAP_SIZE or self.detectors[i][j] == None:
                 pass
             else:
-                self.detectors[i][j].addBall(ball)
+                self.detectors[i][j].addRigidBody(ball)
                 
         i, j = round(self.player.pos[0]/UNIT_LENGTH), round(self.player.pos[2]/UNIT_LENGTH)  
         if not(i < 0 or j < 0 or i >= MAP_SIZE or j >= MAP_SIZE or self.detectors[i][j] == None):
-            self.detectors[i][j].placePlayer(self.player)
+            self.detectors[i][j].addRigidBody(self.player)
         
         for i in range(MAP_SIZE):
             for j in range(MAP_SIZE):  
