@@ -47,8 +47,6 @@ class Viewer:
             for j in range(MAP_SIZE):                
                 if self.maze[i][j] == ROAD:
                     self.balls.append(Ball(radius=0.01, pos=gen_np_f32_array([i*UNIT_LENGTH, ROAD_HEIGHT*UNIT_LENGTH + UNIT_LENGTH, j*UNIT_LENGTH]), v=np.random.rand(3), c=np.random.rand(3)))             
-                    _i, _j = round(self.balls[-1].pos[0]/UNIT_LENGTH), round(self.balls[-1].pos[2]/UNIT_LENGTH) 
-                    print(i, j, "vs", _i, _j)
 
     def light(self, pos=[0, 50, 100.0, 1]):
         glEnable(GL_COLOR_MATERIAL)
@@ -129,15 +127,7 @@ class Viewer:
         glMatrixMode(GL_MODELVIEW)
         glLoadIdentity()
         
-        glColor3f(1, 1, 1)
-        glBegin(GL_LINES)
-        glVertex3f(-0.000005, 0, -0.00015)
-        glVertex3f(0.000005, 0, -0.00015)
-        glEnd()
-        glBegin(GL_LINES)
-        glVertex3f(0, -0.000005, -0.00015)
-        glVertex3f(0, 0.000005, -0.00015)
-        glEnd()
+        drawTargetMark()
         
         self.cameraMatrix = rotationx(self.degx) @ rotationy(self.degy)
         pos = gen_np_f32_array([0, 0, 0, 0]) @ self.cameraMatrix + self.trans 

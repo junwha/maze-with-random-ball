@@ -107,3 +107,15 @@ def drawCube(size=[0.1, 0.1, 0.1], pos=(0, 0, 0)):
             glVertex3f(*f(vertices[i], pos))	
         c += 1				
     glEnd()
+
+
+def drawTargetMark():
+    glColor3f(1, 1, 1)
+    glBegin(GL_LINES)
+    glVertex3f(-0.000005, 0, -0.00015)
+    glVertex3f(0.000005, 0, -0.00015)
+    glEnd()
+    glBegin(GL_LINES)
+    glVertex3f(0, -0.000005, -0.00015)
+    glVertex3f(0, 0.000005, -0.00015)
+    glEnd()
