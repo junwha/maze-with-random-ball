@@ -48,7 +48,7 @@ class Viewer:
                 
         for i in range(MAP_SIZE):
             for j in range(MAP_SIZE):                
-                if self.maze[i][j] == ROAD:
+                if self.maze[i][j] == ROAD and i%2 == 1 and j%2 == 1:
                     self.balls.append(Ball(radius=0.01, pos=gen_np_f32_array([i*UNIT_LENGTH, ROAD_HEIGHT*UNIT_LENGTH + UNIT_LENGTH, j*UNIT_LENGTH, 1]), v=np.append(np.random.rand(3), 0), c=np.random.rand(3)))             
 
     def light(self, pos=[0, 50, 100.0, 1]):
@@ -163,18 +163,18 @@ class Viewer:
                     # for ball in self.balls:
                     #     self.detectors[i][j].addRigidBody(ball)
         
-        for ball in self.balls:
-            ball.update()
-            i, j = round(ball.pos[0]/UNIT_LENGTH), round(ball.pos[2]/UNIT_LENGTH)  
+        rigidBodies = []
+        rigidBodies.extend(self.balls)
+        rigidBodies.append(self.player)
+        for rigidBody in rigidBodies:
+            rigidBody.update()
+            i, j = round(rigidBody.pos[0]/UNIT_LENGTH), round(rigidBody.pos[2]/UNIT_LENGTH)  
             
             if i < 0 or j < 0 or i >= MAP_SIZE or j >= MAP_SIZE or self.detectors[i][j] == None:
                 pass
             else:
-                self.detectors[i][j].addRigidBody(ball)
-                
-        i, j = round(self.player.pos[0]/UNIT_LENGTH), round(self.player.pos[2]/UNIT_LENGTH)  
-        if not(i < 0 or j < 0 or i >= MAP_SIZE or j >= MAP_SIZE or self.detectors[i][j] == None):
-            self.detectors[i][j].addRigidBody(self.player)
+                self.detectors[i][j].addRigidBody(rigidBody)
+               
         
         for i in range(MAP_SIZE):
             for j in range(MAP_SIZE):  
@@ -193,7 +193,7 @@ class Viewer:
         for ball in self.balls:
             ball.draw()    
         
-       
+
         ##### For testing #####
         # self.collisionDetector.testAll()
         # self.sampleBalls[0].draw()
@@ -202,6 +202,14 @@ class Viewer:
 
         glutSwapBuffers()
 
+    def updateVelocity(self, a):
+        cur_v = (self.player.v @ a)
+        print(cur_v)
+        if cur_v < 0:
+            self.player.v += cur_v*a
+        if np.linalg.norm(self.player.v+a) < MAX_VELOCITY:
+            self.player.v += a
+            
     def keyboard(self, key, x, y):
         d = 10
         if self.fov > 0:
@@ -209,23 +217,26 @@ class Viewer:
         pos = gen_np_f32_array([0, 0, 0, 0]) @ self.cameraMatrix + self.player.pos 
         at = gen_np_f32_array([0, 0, -d, 0]) @ self.cameraMatrix + self.player.pos
         up = (gen_np_f32_array([0, 1, 0, 0])) @ self.cameraMatrix
-        left, _, front = getCameraVectors(*(pos[:3]), *(at[:3]), *(up[:3]))
+        left, _, back = getCameraVectors(*(pos[:3]), *(at[:3]), *(up[:3]))
         left[1] = 0
         if np.linalg.norm(left) != 0:
             left = left / np.linalg.norm(left)
         left = np.append(left, [0])
-        front[1] = 0
-        if np.linalg.norm(front) != 0:
-            front = front / np.linalg.norm(front)
-        front = np.append(front, [0])
+        back[1] = 0
+        if np.linalg.norm(back) != 0:
+            back = back / np.linalg.norm(back)
+        back = np.append(back, [0])
         if key == MOVE_FRONT:
-            self.player.pos -= front * VELOCITY
+            self.updateVelocity(-back)
         if key == MOVE_BACK:
-            self.player.pos += front * VELOCITY
+            self.updateVelocity(back)
         if key == MOVE_RIGHT:
-            self.player.pos -= left * VELOCITY
+            self.updateVelocity(-left)
         if key == MOVE_LEFT:
-            self.player.pos += left * VELOCITY
+            self.updateVelocity(left)
+        if key == STOP:
+            self.player.v = ZERO_VECTOR()
+
         if key == b'\x1b':
             exit()
 

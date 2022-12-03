@@ -7,7 +7,7 @@ import math
 from settings import *
 
 EYE_MATRIX = np.eye(4, dtype=NP_DTYPE)
-ZERO_VECTOR = np.zeros(4, dtype=NP_DTYPE)
+ZERO_VECTOR = lambda: np.zeros(4, dtype=NP_DTYPE)
 
 def gen_np_f32_array(array):
     return np.array(array, dtype=NP_DTYPE)
