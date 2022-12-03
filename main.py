@@ -177,14 +177,15 @@ class RigidBody():
         self.pos += self.v*TICK 
 
     # [RigidBody-RigidBody] Test collision was processed before, if not, return True
-    def collidedWithTarget(self, target: 'RigidBody'): 
+    def tryCollideWithTarget(self, target: 'RigidBody'): 
         if target.id in self.collisionTargets:
             return False
-        self.collisionTargets.append(target.id)
+        self.collisionTargets.add(target.id)
+        target.tryCollideWithTarget(self)
         return True
 
     # [RigidBody-Line] Test collision was processed before, if not, return True
-    def collideWithLine(self, ax, i):
+    def tryCollideWithLine(self, ax, i):
         if self.collisionRange[ax][i]:
             return False
         self.collisionRange[ax][i] = True
@@ -212,15 +213,14 @@ class ConstraintBox():
         assert cLines[0][0] < cLines[0][1] and cLines[1][0] < cLines[1][1] and cLines[2][0] < cLines[2][1]
         self.cLines = cLines
         
-    def testBall(self, b: Ball): # return (normal vector, error) on collision, otherwise 0 vector
-        
+    def testBall(self, b: Ball): # return (normal vector, error, line) on collision, otherwise 0 vector
         for i in range(3):
             if (b.pos[i]-b.radius) <= self.cLines[i][0]:
-                return (EYE_MATRIX[i], (b.radius-(b.pos[i]-self.cLines[i][0])))
+                return (EYE_MATRIX[i], (b.radius-(b.pos[i]-self.cLines[i][0])), (i, 0))
             elif (b.pos[i]+b.radius) >= self.cLines[i][1]:
-                return (-EYE_MATRIX[i], (b.radius-(self.cLines[i][1]-b.pos[i])))
+                return (-EYE_MATRIX[i], (b.radius-(self.cLines[i][1]-b.pos[i])), (i, 1))
         
-        return (ZERO_VECTOR, ZERO_VECTOR) 
+        return (ZERO_VECTOR, ZERO_VECTOR, None) 
 class CollisionDetector():
     def __init__(self):
         self.balls = []
@@ -238,10 +238,13 @@ class CollisionDetector():
         # TODO: 
         self.balls.append(b)
 
-    def testCollisionOnOneBall(self, b):
-        normalFromWall, err = self.constraintBox.testBall(b)
+    def testCollisionOnOneBall(self, b: Ball):
+        normalFromWall, err, line = self.constraintBox.testBall(b)
         
         if np.linalg.norm(normalFromWall) == 0:
+            return
+
+        if not b.tryCollideWithLine(*line): # Already triggered
             return
         
         self.triggerOnOneBall(normalFromWall, err, b)
@@ -251,6 +254,8 @@ class CollisionDetector():
         cur_dist = np.linalg.norm(b1.pos-b2.pos)
         
         if min_dist >= cur_dist:
+            if not b1.tryCollideWithTarget(b2): # Already triggered
+                return 
             err = min_dist-cur_dist
             self.triggerOnTwoBalls(err, b1, b2)
         
