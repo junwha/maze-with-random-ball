@@ -23,7 +23,7 @@ class RigidBody():
         self._pos = pos
         self.v = v
         self.collisionTargets = set() # Collided objects to this rigid body
-        self.collisionRange = [[False, False]]*3 # Collided constraint lines
+        self.collisionRange = [[False, False], [False, False], [False, False]] # Collided constraint lines
         
     @property
     def pos(self):
@@ -62,7 +62,7 @@ class RigidBody():
         pass 
     
 class Ball(RigidBody):
-    def __init__(self, radius=UNIT_LENGTH*0.5, pos=gen_np_f32_array([0, 0, 0]), v=gen_np_f32_array([0, 0, 0.5]), c=gen_np_f32_array([1, 1, 1])): 
+    def __init__(self, radius=UNIT_LENGTH*0.01, pos=gen_np_f32_array([0, 0, 0]), v=gen_np_f32_array([0, 0, 0.5]), c=gen_np_f32_array([1, 1, 1])): 
         self.radius = radius
         self.c = c # Color
         super().__init__(pos, v)
@@ -107,15 +107,20 @@ class CollisionDetector():
 
     def testCollisionOnOneBall(self, b: Ball):
         for i in range(3):
-            if abs(b.pos[i]-self.cLines[i][0]) <= b.radius:
+            if b.pos[i]-b.radius <= self.cLines[i][0]:
                 if b.tryCollideWithLine(i, 0):
-                    normal, err = EYE_MATRIX[i], (b.radius-abs(self.cLines[i][0]-b.pos[i]))
+                    normal = EYE_MATRIX[i]
+                    err = self.cLines[i][0] - (b.pos[i]-b.radius) 
+                    
                     self.triggerOnOneBall(normal, err, b)
-            elif abs(b.pos[i]-self.cLines[i][1]) <= b.radius:
+       
+            elif b.pos[i]+b.radius >= self.cLines[i][1]:
                 if b.tryCollideWithLine(i, 1):
-                    normal, err = -EYE_MATRIX[i], (b.radius-abs(b.pos[i]-self.cLines[i][1]))
+                    normal = -EYE_MATRIX[i]
+                    err = (b.pos[i]+b.radius)-self.cLines[i][1] 
+
                     self.triggerOnOneBall(normal, err, b)
-        
+
     def testCollisionOnTwoBalls(self, b1: Ball, b2: Ball):
         min_dist = b1.radius + b2.radius
         cur_dist = np.linalg.norm(b1.pos-b2.pos)
@@ -128,9 +133,8 @@ class CollisionDetector():
         
     def triggerOnOneBall(self, n, err, b):
         assert np.linalg.norm(n) == 1
-
+        # print(f"trigger on {b.id}")
         b.pos = b.pos + n*err # Error correction
-
         b.v = b.v - (2 * (b.v@n))*n 
 
     def triggerOnTwoBalls(self, err, b1: Ball, b2: Ball):
