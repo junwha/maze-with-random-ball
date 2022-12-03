@@ -25,7 +25,7 @@ class Viewer:
         self.degx = 0
         self.degy = -90
         
-        self.player = Player(radius=0.4*UNIT_LENGTH, pos=SPAWN_PLACE, v=gen_np_f32_array([0, 0, 0, 0]))
+        self.player = Player(radius=0.5*UNIT_LENGTH, pos=SPAWN_PLACE, v=gen_np_f32_array([0, 0, 0, 0]))
         # self.player.pos = gen_np_f32_array([-1*UNIT_LENGTH, UNIT_LENGTH*ROAD_HEIGHT+2*UNIT_LENGTH, UNIT_LENGTH, .0])
         self.w = 800
         self.h = 800

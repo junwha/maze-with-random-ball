@@ -136,7 +136,7 @@ def drawGameEnd():
         glPointSize(25)
         glBegin(GL_POINTS)
         for y in range(len(bitMap)):
-            CHARACTER_UNIT = 0.000005
+            CHARACTER_UNIT = 0.005
             if bitMap[y][x] == 1:
-                glVertex3f(CHARACTER_UNIT*(x-len(bitMap[0])/2), -CHARACTER_UNIT*(y-len(bitMap)/2), -0.00015)
+                glVertex3f(CHARACTER_UNIT*(x-len(bitMap[0])/2), -CHARACTER_UNIT*(y-len(bitMap)/2), -0.15)
         glEnd()
