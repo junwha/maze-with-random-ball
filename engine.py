@@ -68,6 +68,7 @@ class EndTarget(RigidBody):
         super().__init__(pos, v, radius, reactionable=False)
         
     def draw(self):
+        glColor3f(0, 0, 0.7)
         glPushMatrix()
         glTranslatef(*self.pos[:3])
         glutSolidTeapot(2*self.radius)

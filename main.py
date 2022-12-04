@@ -39,7 +39,7 @@ class Viewer:
         self.maze = maze.getMaze(MAP_SIZE)
         self.detectors =[[None for j in range(MAP_SIZE)] for i in range(MAP_SIZE)] # Each entry of maze has a detector
         self.gameOver = False
-        
+        self.gameClear = False
         ##### For testing #####
         # self.sampleBalls = [
         #     Ball(pos=gen_np_f32_array([-1*UNIT_LENGTH, 1.5*UNIT_LENGTH, -1*UNIT_LENGTH]), v=gen_np_f32_array([0, 0.5, 0.5])),
@@ -59,7 +59,7 @@ class Viewer:
         for i in range(MAP_SIZE): 
             for j in range(MAP_SIZE):                
                 if self.maze[i][j] == ROAD and i%2 == 1 and j%2 == 1: 
-                    self.rigidBodies.append(Ball(radius=0.01, pos=gen_np_f32_array([i*UNIT_LENGTH, ROAD_HEIGHT*UNIT_LENGTH + UNIT_LENGTH, j*UNIT_LENGTH, 1]), v=np.append(np.random.rand(3), 0), c=np.random.rand(3)))             
+                    self.rigidBodies.append(Ball(radius=0.05, pos=gen_np_f32_array([i*UNIT_LENGTH, ROAD_HEIGHT*UNIT_LENGTH + UNIT_LENGTH, j*UNIT_LENGTH, 1]), v=np.append(np.random.rand(3), 0), c=np.random.rand(3)))             
 
     def light(self, pos=[0, 50, 100.0, 1]):
         glEnable(GL_COLOR_MATERIAL)
@@ -142,9 +142,14 @@ class Viewer:
         glMatrixMode(GL_MODELVIEW)
         glLoadIdentity()
         
+            
         if self.gameOver:
             self.player.pos = gen_np_f32_array([-1*UNIT_LENGTH, UNIT_LENGTH*ROAD_HEIGHT+10*UNIT_LENGTH, UNIT_LENGTH, 1])
             drawGameEnd()
+        elif self.gameClear:
+            self.light(pos=gen_np_f32_array([0, 0, 3 , 1]))
+            self.player.pos = gen_np_f32_array([(MAP_SIZE-2)*UNIT_LENGTH, UNIT_LENGTH*ROAD_HEIGHT+10*UNIT_LENGTH, (MAP_SIZE-1)*UNIT_LENGTH, 1])
+            drawGameClear()
         else:
             drawTargetMark()
 
@@ -194,18 +199,26 @@ class Viewer:
                 if self.maze[i][j] == ROAD:
                     self.detectors[i][j].testAll()
                     
-        ########################
-        #### Test Game Over ####
-        ########################    
-        if len(self.player.collisionTargets) > 0:
-            self.gameOver = True
+        ##############################
+        #### Test Game Over/Clear ####
+        ##############################    
+        # if len(self.player.collisionTargets) > 0:
+        #     self.gameOver = True
+        #     self.rx = 0
+        #     self.ry = 0
+        #     self.fov = 60
+        #     self.zoom = 1
+        #     self.degx = 0
+        #     self.degy = -90
+        if self.teapot.id in self.player.collisionTargets:
+            self.gameClear = True
             self.rx = 0
             self.ry = 0
             self.fov = 60
             self.zoom = 1
             self.degx = 0
-            self.degy = -90
-
+            self.degy = 90
+            
         ####################
         #### Draw Scene ####
         ####################

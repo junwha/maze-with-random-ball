@@ -120,20 +120,12 @@ def drawTargetMark():
     glVertex3f(0, -0.000005, -0.00015)
     glVertex3f(0, 0.000005, -0.00015)
     glEnd()
-               
-def drawGameEnd():
-    glClearColor(1.0, 1.0, 1.0, 1.0);
-
-
-    bitMap = [ # Pixel Art for "D E A D"
-        [1, 1, 1, 0, 0, 1, 1, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0],
-        [1, 0, 0, 1, 0, 1, 0, 0, 0, 0, 1, 0, 0, 1, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0],
-        [1, 0, 0, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 1, 0, 0, 1, 0, 0, 1, 0, 1, 0, 1, 0, 1, 0],
-        [1, 0, 0, 1, 0, 1, 0, 0, 0, 0, 1, 0, 0, 1, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1],
-        [1, 1, 1, 0, 0, 1, 1, 1, 1, 0, 1, 0, 0, 1, 0, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1]
-    ]
+    
+    
+    
+def drawBitmapString(bitMap, color):
+    glColor3f(*color)
     for x in range(len(bitMap[0])): # Draw with Vertices
-        glColor3f(1, 0, 0)
         glPointSize(25)
         glBegin(GL_POINTS)
         for y in range(len(bitMap)):
@@ -141,3 +133,11 @@ def drawGameEnd():
             if bitMap[y][x] == 1:
                 glVertex3f(CHARACTER_UNIT*(x-len(bitMap[0])/2), -CHARACTER_UNIT*(y-len(bitMap)/2), -0.15)
         glEnd()
+
+def drawGameEnd():
+    drawBitmapString(GAMEOVER_BITMAP_STRING, [1, 0, 0])
+
+
+def drawGameClear():
+    drawBitmapString(GAMECLEAR_BITMAP_STRING, [0, 1, 0])
+    
