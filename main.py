@@ -8,7 +8,9 @@ from settings import *
 from utils import *
 from engine import *
 
-SPAWN_PLACE = gen_np_f32_array([-3*UNIT_LENGTH, UNIT_LENGTH*ROAD_HEIGHT+1*UNIT_LENGTH, UNIT_LENGTH, 1])
+SPAWN_POINT = gen_np_f32_array([-3*UNIT_LENGTH, UNIT_LENGTH*ROAD_HEIGHT+UNIT_LENGTH, UNIT_LENGTH, 1])
+ENDING_POINT = gen_np_f32_array([(MAP_SIZE-1)*UNIT_LENGTH, UNIT_LENGTH*ROAD_HEIGHT+UNIT_LENGTH, (MAP_SIZE-2)*UNIT_LENGTH, 1])
+
 class Viewer:
     def __init__(self):
         self.mode = 0 # 0: non-moving, 1: camera moving
@@ -31,7 +33,8 @@ class Viewer:
         self.w = 800
         self.h = 800
         
-        self.player = Player(radius=0.5*UNIT_LENGTH, pos=SPAWN_PLACE, v=gen_np_f32_array([0, 0, 0, 0])) # Player Rigidbody
+        self.teapot = EndTarget(radius=0.3*UNIT_LENGTH, pos=ENDING_POINT, v=ZERO_VECTOR())
+        self.player = Player(radius=0.5*UNIT_LENGTH, pos=SPAWN_POINT, v=ZERO_VECTOR()) # Player Rigidbody
         
         self.maze = maze.getMaze(MAP_SIZE)
         self.detectors =[[None for j in range(MAP_SIZE)] for i in range(MAP_SIZE)] # Each entry of maze has a detector
@@ -48,13 +51,15 @@ class Viewer:
         # for ball in self.sampleBalls:
         #     self.collisionDetector.addRigidBody(ball)
         
-        self.balls = []
+        self.rigidBodies = []
+        self.rigidBodies.append(self.player)
+        self.rigidBodies.append(self.teapot)
         
         # Generate random balls
         for i in range(MAP_SIZE): 
             for j in range(MAP_SIZE):                
                 if self.maze[i][j] == ROAD and i%2 == 1 and j%2 == 1: 
-                    self.balls.append(Ball(radius=0.01, pos=gen_np_f32_array([i*UNIT_LENGTH, ROAD_HEIGHT*UNIT_LENGTH + UNIT_LENGTH, j*UNIT_LENGTH, 1]), v=np.append(np.random.rand(3), 0), c=np.random.rand(3)))             
+                    self.rigidBodies.append(Ball(radius=0.01, pos=gen_np_f32_array([i*UNIT_LENGTH, ROAD_HEIGHT*UNIT_LENGTH + UNIT_LENGTH, j*UNIT_LENGTH, 1]), v=np.append(np.random.rand(3), 0), c=np.random.rand(3)))             
 
     def light(self, pos=[0, 50, 100.0, 1]):
         glEnable(GL_COLOR_MATERIAL)
@@ -174,10 +179,7 @@ class Viewer:
         ############################
         
         # Assign each rigid body to proper box
-        rigidBodies = []
-        rigidBodies.extend(self.balls)
-        rigidBodies.append(self.player)
-        for rigidBody in rigidBodies:
+        for rigidBody in self.rigidBodies:
             rigidBody.update()
             i, j = round(rigidBody.pos[0]/UNIT_LENGTH), round(rigidBody.pos[2]/UNIT_LENGTH)  
             
@@ -207,8 +209,8 @@ class Viewer:
         ####################
         #### Draw Scene ####
         ####################
-        for ball in self.balls:
-            ball.draw()    
+        for rigidBody in self.rigidBodies:
+            rigidBody.draw()    
         
 
         ##### For testing #####
