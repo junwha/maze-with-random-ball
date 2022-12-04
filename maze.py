@@ -78,7 +78,8 @@ def getMaze(map_size):
     makePath(greed, 1, 1, SOUTH, map_size) #  Start from 1, 1
     greed[2][1] = 0 #  Destroy only one direction from 1, 1
     greed[0][1] = 0 #  Destroy one wall on outer barrier
-    
+    greed[map_size-1][map_size-2] = 0
+    greed[map_size-2][map_size-2] = 0
     #  Mark path as 0
     for row in range(map_size):
         for col in range(map_size):

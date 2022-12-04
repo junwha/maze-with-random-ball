@@ -63,18 +63,23 @@ class RigidBody():
     def draw(self):
         pass 
 
-class Bullet(RigidBody):
-    def __init__(self, pos, v, radius=UNIT_LENGTH*0.0001, c=gen_np_f32_array([1, 0, 0])): 
-        super().__init__(pos, v, radius, reactionable=False)
-class Player(RigidBody):
+class EndTarget(RigidBody):
     def __init__(self, radius=UNIT_LENGTH, pos=gen_np_f32_array([0, 0, 0, 1]), v=gen_np_f32_array([0, 0, 0, 0])):
-            super().__init__(pos, v, radius, reactionable=False)
+        super().__init__(pos, v, radius, reactionable=False)
+        
     def draw(self):
+        glColor3f(0, 0, 0.7)
         glPushMatrix()
         glTranslatef(*self.pos[:3])
-        glutSolidSphere(self.radius, 100, 100)
+        glutSolidTeapot(2*self.radius)
         glPopMatrix()
         glColor3f(1, 1, 1)
+        
+class Player(RigidBody):
+    def __init__(self, radius=UNIT_LENGTH, pos=gen_np_f32_array([0, 0, 0, 1]), v=gen_np_f32_array([0, 0, 0, 0])):
+        super().__init__(pos, v, radius, reactionable=False)
+    def draw(self):
+        pass
 class Ball(RigidBody):
     def __init__(self, radius=UNIT_LENGTH*0.01, pos=gen_np_f32_array([0, 0, 0, 1]), v=gen_np_f32_array([0, 0, 0.5, 0]), c=gen_np_f32_array([1, 1, 1])): 
         self.c = c # Color
